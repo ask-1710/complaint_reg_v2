@@ -10,11 +10,24 @@ import TrieSet "mo:base/TrieSet";
 import Nat "mo:base/Nat";
 
 actor {
+  type CID = Text;
+  type StatusText = {
+    #firregisteration;
+    #prelimnaryreportfiling;
+    #investigation;
+    #finalreportfiling;
+    #courtphase;
+    #solved;
+    #unsolved;
+  };
 
   type Complaint = {
     title : Text;
     description : Text;
     typee : Text;
+    files: [CID];
+    location: Text;
+    status: StatusText;
   };
 
   public type Role = {
