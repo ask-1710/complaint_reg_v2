@@ -17,7 +17,7 @@ const Registeration = ({ actor, principalId }) => {
 
   const createUser = async () => {
     console.log("Calling add user function");
-    const createdUserResp = await actor.addUser(userInfo.name, "general");
+    const createdUserResp = await actor.addUser(userInfo.name, "user","chennai");
     console.log(createdUserResp);
   };
   const createPolice = async () => {
