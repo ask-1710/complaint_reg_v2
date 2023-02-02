@@ -1,15 +1,14 @@
-import React, { useEffect } from "react";
+import React, { useEffect , useState } from "react";
 import ReactDOM from "react-dom/client";
 import { complaint_reg_v2_backend } from "../../declarations/complaint_reg_v2_backend";
-import { useState } from "react";
 import { idlFactory } from "../../declarations/complaint_reg_v2_backend";
 import Registeration from "./components/registeration";
 import { Router } from "../../../node_modules/react-router-dom/dist/index";
 import { Route } from "../../../node_modules/react-router-dom/dist/index";
-import UserDashboard from "/pages/UserDashboard";
-import PoliceDashboard from "/pages/PoliceDashboard";
+import PoliceDashboard from "./pages/PoliceDashboard";
 import { redirect } from "react-router-dom";
 import { Navbar } from "../../../node_modules/react-bootstrap/esm/index";
+import { Link } from "../../../node_modules/react-router-dom/dist/index";
 
 
 const App = function () {
@@ -20,7 +19,7 @@ const App = function () {
   const [publicKey, setPublicKey] = useState("");
   const [isNewUser, setIsNewUser] = useState(true);
 
-  const nnsCanisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
+  const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
   const whitelist = [nnsCanisterId];
   const host = "http://127.0.0.1:4943";
 
@@ -111,6 +110,7 @@ const App = function () {
 
   const getUserDetails = async () => {
     const details = await actor.getUserDetails();
+    console.log(details);
 
   };
   /*************INTERACTION WITH BC ****************/
@@ -132,24 +132,34 @@ const App = function () {
         ) : (
           <>
           <Navbar>
-            Smart Police Chain
+            <ul>
+              <li>Smart Police Chain</li>
+              {/* <li><Link to="policedashboard">Police Dashboard</Link></li> */}
+            </ul>
           </Navbar>
-            <Router>
-              <Route path="/userdashboard">
+          <br/>
+          <PoliceDashboard actor = {actor}/>
+            {/* <Router> */}
+              {/* <Route path="/userdashboard">
                 <UserDashboard
                   actor={actor}
                   setActor={setActor}
                   principalId={principalId}
                 />
-              </Route>
-              <Route path="/policedashboard">
+              </Route> */}
+              {/* <Route path="/addComplaint">
+                <ComplaintForm 
+                  actor={actor}
+                  setActor={setActor}
+                  principalId={principalId}
+                />
+              </Route> */}
+              {/* <Route path="/policedashboard" element={<PoliceDashboard actor={actor}/>}>
                 <PoliceDashboard
                   actor={actor}
-                  selected={selectedCoin}
-                  setSelected={setSelectedCoin}
                 />
-              </Route>
-            </Router>
+              </Route> */}
+            {/* </Router> */}
           </>
         )
       ) : (
