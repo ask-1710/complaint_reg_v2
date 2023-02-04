@@ -2,9 +2,11 @@ import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import Switch from "react-switch";
 import { useState } from "react";
+import { Card } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
-const Registeration = ({ actor, principalId }) => {
-  const [userInfo, setUserInfo] = useState({ name: "" });
+const Registeration = ({ actor, principalId , setIsNewUser }) => {
+  const [userInfo, setUserInfo] = useState({ name: "", address: "" });
   const [policeInfo, setPoliceInfo] = useState({
     name: "",
     designation: "",
@@ -12,13 +14,14 @@ const Registeration = ({ actor, principalId }) => {
   });
   const [isUser, setIsUser] = useState(false);
   const [hasRoleChosen, setHasRoleChosen] = useState(false);
-
-  useEffect(() => {}, []);
+  const navigate = useNavigate();
 
   const createUser = async () => {
     console.log("Calling add user function");
-    const createdUserResp = await actor.addUser(userInfo.name, "user","chennai");
+    const createdUserResp = await actor.addUser(userInfo.name, "user",userInfo.address);
     console.log(createdUserResp);
+    setIsNewUser(false)
+    navigate("/userdashboard", { state: { principalId , isConnected: true } });
   };
   const createPolice = async () => {
     console.log("Calling add police function");
@@ -28,32 +31,37 @@ const Registeration = ({ actor, principalId }) => {
       policeInfo.role
     );
     console.log(createdPoliceResp);
+    setIsNewUser(false);
+    navigate("/policedashboard", { state: { principalId , isConnected: true } });
   };
 
   return (
-    <>
-      {hasRoleChosen ? (
+    <div className="registration-card center">
+      <div className="container">
+        <div className="row typewriter">
+          <p>Select your role:</p>
+        </div>
+        <div className="row mt-3">
+          <Switch
+            className="mr-5 mb-0 col-4"
+            name="userType"
+            onChange={(ev) => {
+              setIsUser(ev);
+              setHasRoleChosen(true);
+            }}
+            checked={isUser}
+          />
+          <p className="mt-1 col-2">{isUser ? "Complainant" : "Police"}</p>
+        </div>
+      </div>
+      {hasRoleChosen && (
         <>
-          <>
-            Select your role:
-            <br />
-            <Switch
-              name="userType"
-              onChange={(ev) => {
-                setIsUser(ev);
-              }}
-              checked={isUser}
-            />
-            {isUser ? "Complainant" : "Police"}
-            <br />
-            <br />
-          </>
-          <>
-            {isUser ? (
-              <>
-                <h4>Registeration form for user</h4>
-                <p>Enter your name :</p>
+          {isUser ? (
+            <div className="container">
+              <div className="row mt-2 justify-content-center">
                 <input
+                  className="form-control col-6"
+                  placeholder="Enter name"
                   type="text"
                   id="userName"
                   name="userName"
@@ -62,27 +70,52 @@ const Registeration = ({ actor, principalId }) => {
                     setUserInfo({ ...userInfo, ["name"]: ev.target.value });
                   }}
                 ></input>
-                <p>Hi {" " + userInfo.name + " "} !!</p>
-                <button type="submit" onClick={createUser}>
-                  Create User account
-                </button>
-              </>
-            ) : (
-              <>
-                <h4>Registeration form for police</h4>
-                <p>Enter your name :</p>
+              </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter address"
+                  type="text"
+                  id="userName"
+                  name="userName"
+                  value={userInfo.address}
+                  onChange={(ev) => {
+                    setUserInfo({ ...userInfo, ["address"]: ev.target.value });
+                  }}
+                ></input>
+              </div>
+
+              <button
+                className="mt-4 button-27"
+                type="submit"
+                onClick={createUser}
+              >
+                Create User account
+              </button>
+            </div>
+          ) : (
+            <div className="container">
+              <div className="row mt-2 justify-content-center">
                 <input
                   type="text"
+                  className="col-6 form-control"
                   id="policeName"
+                  placeholder="Enter name"
                   name="policeName"
                   value={policeInfo.name}
                   onChange={(ev) => {
                     setPoliceInfo({ ...policeInfo, ["name"]: ev.target.value });
                   }}
                 ></input>
-                <br />
+              </div>
+              <div className="row mt-2">
+                <div className="col-4">
+                    <p className="placeholder-text-color">Enter Role</p>
+                </div>
+                <div className="col-6">
                 <input
                   type="radio"
+                  className="col-6"
                   name="policeRole"
                   onChange={(ev) => {
                     if (ev.target.checked) {
@@ -91,9 +124,9 @@ const Registeration = ({ actor, principalId }) => {
                   }}
                 />
                 Creator
-                <br />
                 <input
                   type="radio"
+                  className="col-6"
                   name="policeRole"
                   onChange={(ev) => {
                     if (ev.target.checked) {
@@ -101,11 +134,11 @@ const Registeration = ({ actor, principalId }) => {
                     }
                   }}
                 />
-                Owner
-                <br />
+                Owner            
                 <input
                   type="radio"
                   name="policeRole"
+                  className="col-6"
                   onChange={(ev) => {
                     if (ev.target.checked) {
                       setPoliceInfo({ ...policeInfo, ["role"]: "general" });
@@ -113,10 +146,14 @@ const Registeration = ({ actor, principalId }) => {
                   }}
                 />
                 General
-                <br />
+              </div>
+              </div>
+              <div className="row mt-2 justify-content-center">
                 <input
                   type="type"
                   id="designation"
+                  className="form-control col-6"
+                  placeholder="Enter designation"
                   name="policeDesignation"
                   value={policeInfo.designation}
                   onChange={(ev) => {
@@ -126,33 +163,19 @@ const Registeration = ({ actor, principalId }) => {
                     });
                   }}
                 />
-                <br />
-                <p>Hi {" " + policeInfo.name + " "} !!</p>
-                <button type="submit" onClick={createPolice}>
-                  Create Police account
-                </button>
-              </>
-            )}
-          </>
-        </>
-      ) : (
-        <>
-          Select your role:
-          <br />
-          <Switch
-            name="userType"
-            onChange={(ev) => {
-              setIsUser(ev);
-              setHasRoleChosen(true);
-            }}
-            checked={isUser}
-          />
-          {isUser ? "Complainant" : "Police"}
-          <br />
-          <br />
+              </div>
+              <button
+                className="mt-4 button-27"
+                type="submit"
+                onClick={createPolice}
+              >
+                Create Police account
+              </button>
+            </div>
+          )}
         </>
       )}
-    </>
+    </div>
   );
 };
 
