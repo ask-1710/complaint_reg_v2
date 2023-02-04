@@ -24,14 +24,14 @@ actor {
   type Complaint = {
     title : Text;
     summary : Text;
-    date: Text;
-    location: Text;
+    date : Text;
+    location : Text;
     typee : Text;
-    evidence: [Text]; // CIDs
-    status: StatusText;
-    FIR: Text; // CID - step1
-    chargesheet: Text; // CID
-    closureReport: Text; // CID
+    evidence : [Text]; // CIDs
+    status : StatusText;
+    FIR : Text; // CID - step1
+    chargesheet : Text; // CID
+    closureReport : Text; // CID
   };
 
   public type Role = {
@@ -44,7 +44,7 @@ actor {
   // stats like number of complaints,
   type User = {
     name : Text;
-    address: Text;
+    address : Text;
     complaints : [Nat];
   };
   // TODO: add stats, complaints solved, complaints pending, assigned, active, unsolved&inactive
@@ -85,18 +85,18 @@ actor {
     };
     return actualRole;
   };
-  private func roleToText(role: Role) : Text {
-    switch(role) {
-      case(#administrator) {
+  private func roleToText(role : Role) : Text {
+    switch (role) {
+      case (#administrator) {
         return "admin";
       };
-      case(#investigator) {
+      case (#investigator) {
         return "investigator";
       };
-      case(#complainant) {
+      case (#complainant) {
         return "complainant";
       };
-      case(#general) {
+      case (#general) {
         return "general";
       };
     };
@@ -104,14 +104,14 @@ actor {
   private func requestRole(principal : Principal, role : Text) : () {
     let actualRole = textToRole(role);
     roleRequests.put(principal, actualRole);
-    switch(roleRequests.get(principal)) {
-      case(null) {
+    switch (roleRequests.get(principal)) {
+      case (null) {
         Debug.print("No role requests");
       };
-      case(?req) {
+      case (?req) {
         Debug.print("Role requests " # roleToText(req));
       };
-    }
+    };
   };
   private func assignRole(principal : Principal, role : Text) : () {
     roleRequests.delete(principal);
@@ -124,10 +124,17 @@ actor {
   /************** ROLES HELPERS END **************/
 
   /************* COMPLAINT HELPERS START ***************/
-  
+
   /************** COMPLAINT HELPERS END ***********/
 
   /************** PERMISSION HELPERS START ***********/
+  private func canAddComplaint(principal : Principal) : Bool {
+    let role = getRole(principal);
+    switch (role) {
+      case (?#complainant) return true;
+      case (_) return false;
+    };
+  };
   private func canCreateEvidence(principal : Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
@@ -162,44 +169,90 @@ actor {
   public query func greet(name : Text) : async Text {
     return "Hello, " # name # "!";
   };
-  public query ({ caller }) func isNewActor() : async Bool {
+  public query ({ caller }) func isNewActor() : async (Bool, Text) {
     let isUser = userList.get(caller);
     let isPolice = policeList.get(caller);
-    if (isUser != null or isPolice != null) {
-      return false;
+    if (isUser == null or isPolice == null) {
+      return (true, "");
+    } else if(isUser!=null) {
+      return (false, "user");
     } else {
-      return true;
+      return (false, "police");
     };
   };
-  public query ({ caller }) func getUserDetails() : async Text {
-    switch(userList.get(caller)) {
-      case(null) { return "No user with principal id " # Principal.toText(caller) ; };
-      case(?user) { return user.name # " has PID " #  Principal.toText(caller) ; };
+  public query ({ caller }) func getUserDetails() : async [(Text, User)] {
+    let dummyUser: User = {
+      name = "";
+      address= "";
+      complaints=[];
+    };
+    switch (userList.get(caller)) {
+      case (null) {
+        return [("", dummyUser)];
+      };
+      case (?user) { 
+        let principalText = Principal.toText(caller);
+        return [(principalText, user)];        
+       };
     };
   };
-  public query ({ caller }) func viewComplaints(): async Text {
-    let complaint =  complaintList.get(numComplaints-1) ;
-    switch(complaint) {
-      case(null) { return "None yet"  };
-      case(?comp) {  return comp.title };
+  public query ({ caller }) func viewComplaints() : async Text {
+    let complaint = complaintList.get(numComplaints -1);
+    switch (complaint) {
+      case (null) { return "None yet" };
+      case (?comp) { return comp.title };
     };
   };
-  public query func getUnassignedComplaints(): async [(Nat, Complaint)] {
+  public query func getUnassignedComplaints() : async [(Nat, Complaint)] {
     var complaints = Iter.toArray<(Nat, Complaint)>(complaintList.entries());
     // Debug.print(Nat.toText(complaints[0].0) # complaints[0].1.title);
     return complaints;
   };
+  public query ({ caller }) func getUserComplaints() : async [(Nat, Complaint)] {
+    let userComplaints : HashMap.HashMap<Nat, Complaint> = HashMap.HashMap(32, Nat.equal, Hash.hash);
+    let userObj : ?User = userList.get(caller);
+    let dummyComplaint = {
+      title = "";
+      summary = "";
+      location = "";
+      date = "";
+      status = #firregisteration;
+      typee = "";
+      evidence = [""];
+      FIR = "NONE";
+      chargesheet = "NONE";
+      closureReport = "NONE";
+    };
+    let dummyComplaintId: Nat = 0;
+    switch (userObj) {
+      case (null) { return [(dummyComplaintId, dummyComplaint)] }; // 0 => unregistered user
+      case (?user) {
+        let userComplaintsIds : [Nat] = user.complaints;
+        for (compId in Iter.range(0, userComplaintsIds.size() -1)) {
+          let currComplaintId = userComplaintsIds[compId];
+          let currComplaint = complaintList.get(currComplaintId);
+          switch (currComplaint) {
+            case (null) {};
+            case (?currComplaint) {
+              userComplaints.put(currComplaintId, currComplaint);
+            };
+          };
+        };
+        return Iter.toArray<(Nat, Complaint)>(userComplaints.entries());
+      };
+    };
+  };
   /************** QUERY FUNCTIONS END ***********/
 
   /************** UPDATE FUNCTIONS END ***********/
-  public shared ({ caller }) func addUser(name : Text, role : Text, address: Text) : async Text {
+  public shared ({ caller }) func addUser(name : Text, role : Text, address : Text) : async Text {
     requestRole(caller, role);
-    userList.put(caller, { name = name; complaints = [] ; address = address ;});
-    switch(userList.get(caller)) {
-      case(null) {
+    userList.put(caller, { name = name; complaints = []; address = address });
+    switch (userList.get(caller)) {
+      case (null) {
         return "Error while creating user";
       };
-      case(_) {
+      case (_) {
         return "Hii " # name # ", User with principal " # Principal.toText(caller) # " has been created!";
       };
     };
@@ -209,43 +262,46 @@ actor {
     policeList.put(caller, { name = name; designation = designation; activeComplaints = []; numSolvedCases = 0; numUnsolvedCases = 0 });
     return "Hii " # name # ", Police with principal " # Principal.toText(caller) # " has been created!";
   };
-  public shared ({ caller }) func addComplaint(title: Text, summary: Text, location: Text, date: Text): async Bool {
+  public shared ({ caller }) func addComplaint(title : Text, summary : Text, location : Text, date : Text) : async Bool {
     let mlResult = "Cognizable";
-    var finalResult: Bool = false;
+    var finalResult : Bool = false;
     var user = userList.get(caller);
-    switch(user) {
-      case(null) { finalResult := false; };
-      case(?obj) {
-            var oldComplaints:[Nat] = obj.complaints;
-            complaintList.put(numComplaints, {
-              title = title;
-              summary = summary;
-              location = location ;
-              date = date ;
-              status = #firregisteration;
-              typee = mlResult;
-              evidence = [""];
-              FIR = "NONE";
-              chargesheet = "NONE";
-              closureReport = "NONE";
-            });
-            oldComplaints := Array.append(oldComplaints, [numComplaints]);
-            numComplaints := numComplaints+1;
-            var newUser : User = {
-              name = obj.name;
-              address = obj.address; 
-              complaints = oldComplaints;
-            };
-            userList.put(caller, newUser);
-            finalResult := true;
+    switch (user) {
+      case (null) { finalResult := false };
+      case (?obj) {
+        var oldComplaints : [Nat] = obj.complaints;
+        numComplaints := numComplaints +1;
+        complaintList.put(
+          numComplaints,
+          {
+            title = title;
+            summary = summary;
+            location = location;
+            date = date;
+            status = #firregisteration;
+            typee = mlResult;
+            evidence = [""];
+            FIR = "NONE";
+            chargesheet = "NONE";
+            closureReport = "NONE";
+          },
+        );
+        oldComplaints := Array.append(oldComplaints, [numComplaints]);
+        var newUser : User = {
+          name = obj.name;
+          address = obj.address;
+          complaints = oldComplaints;
         };
+        userList.put(caller, newUser);
+        finalResult := true;
+      };
     };
     return finalResult;
   };
   /************** UPDATE FUNCTIONS END ***********/
 };
 
-  /*(
+/*(
   vec {
     record {
       0 : nat;
