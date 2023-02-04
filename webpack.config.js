@@ -48,7 +48,7 @@ module.exports = {
   entry: {
     // The frontend.entrypoint points to the HTML file for this build, so we need
     // to replace the extension to `.js`.
-    index: path.join(__dirname, frontend_entry).replace(/\.html$/, ".jsx"),
+    index: path.join(__dirname, frontend_entry).replace(/\.html$/, ".js"),
   },
   devtool: isDevelopment ? "source-map" : false,
   optimization: {
@@ -68,6 +68,7 @@ module.exports = {
   output: {
     filename: "index.js",
     path: path.join(__dirname, "dist", frontendDirectory),
+    publicPath: '/'
   },
 
   // Depending in the language or framework you are using for
@@ -84,6 +85,10 @@ module.exports = {
   module: {
     rules: [
       { test: /\.(js|ts)x?$/, loader: "ts-loader" },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader']
+      }
     ],
   },
   plugins: [
@@ -125,5 +130,6 @@ module.exports = {
     hot: true,
     watchFiles: [path.resolve(__dirname, "src", frontendDirectory)],
     liveReload: true,
+    historyApiFallback: true,
   },
 };
