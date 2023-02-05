@@ -13,6 +13,7 @@ const App = function () {
   const [isConnected, setIsConnected] = useState(false);
   const [principalId, setPrincipalId] = useState("");
   const [publicKey, setPublicKey] = useState("");
+  const [isSetupComplete, setIsSetupComplete ] = useState(false);
   const [isNewUser, setIsNewUser] = useState([true, ""]);
   const navigate = useNavigate();
 
@@ -88,16 +89,20 @@ const App = function () {
   const verifyUser = async () => {
     if (isConnected) {
       const isNew = await actor.isNewActor();
+      console.log(isNew);
       if (isNew[0]) {
         setIsNewUser(isNew);
+        setIsSetupComplete(true);
       } else {
         if (isNew[1] == "user") {
+          setIsSetupComplete(true);
           setIsNewUser(isNew);
           navigate("/userdashboard", {
             state: { actor: actor, principalId: principalId },
           });
         }
         if (isNew[1] == "police") {
+          setIsSetupComplete(true);
           setIsNewUser(isNew);
           navigate("/policedashboard", {
             state: { actor: actor, principalId: principalId },
@@ -117,7 +122,7 @@ const App = function () {
 
   return (
     <div className="body-container">
-      {isConnected ? (
+      {isConnected && isSetupComplete ? (
         isNewUser[0] && (
           <Registeration
             actor={actor}
@@ -143,12 +148,11 @@ const App = function () {
         </div>
       )}
       <Routes>
-        <Route path="/userdashboard" element={<UserDashboard setIsConnected={setIsConnected} createActor={createActor} setIsNewUser={setIsNewUser}/>}></Route>
-        <Route path="/policedashboard" element={<PoliceDashboard setIsConnected={setIsConnected} createActor={createActor} setIsNewUser={setIsNewUser}/>}></Route>
+        <Route path="/userdashboard" element={<UserDashboard setIsConnected={setIsConnected} createActor={createActor} setIsNewUser={setIsNewUser} actor={actor} setIsSetupComplete={setIsSetupComplete}/>}></Route>
+        <Route path="/policedashboard" element={<PoliceDashboard setIsConnected={setIsConnected} createActor={createActor} setIsNewUser={setIsNewUser} actor={actor} setIsSetupComplete={setIsSetupComplete}/>}></Route>
       </Routes>
     </div>
   );
 };
 
 export default App;
-// http://127.0.0.1:4943/?canisterId=r7inp-6aaaa-aaaaa-aaabq-cai

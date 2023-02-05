@@ -4,7 +4,7 @@ import { Badge } from "react-bootstrap";
 import { useLocation } from "react-router-dom";
 import { idlFactory } from "../../../declarations/complaint_reg_v2_backend";
 
-const UserDashboard = ({ setIsConnected , createActor , setIsNewUser }) => {
+const UserDashboard = ({ actor, setIsConnected , createActor , setIsNewUser, setIsSetupComplete }) => {
   const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
   const [user, setUser] = useState({
     name: "",
@@ -13,7 +13,6 @@ const UserDashboard = ({ setIsConnected , createActor , setIsNewUser }) => {
   });
   const [complaints, setComplaints] = useState([]);
   const [isUserSet, setIsUserSet] = useState(false);
-  const [actor, setActor] = useState("");
   const possibleStages = {firregisteration: {step:1, badgeText:"FIR registeration"},investigation: {step:2, badgeText:"Investigation on-progress"}, finalreportfiling: {step:3, badgeText:"Filing final report"},solved: {step:4, badgeText:"Solved"}, unsolved: {step:5, badgeText:"Unsolved"}};
   
   const location = useLocation();
@@ -22,14 +21,15 @@ const UserDashboard = ({ setIsConnected , createActor , setIsNewUser }) => {
   
 
   useEffect(()=>{
+    setIsSetupComplete(true);
     setIsNewUser(false,"user");
     setIsConnected(true);
     if(actor=="") createActor();
-  })
+  },[])
 
   useEffect(() => {
     if(!isUserSet && actor!="") getUserDetails();
-  }, [isUserSet, actor]);
+  }, [actor]);
 
 
   async function getUserDetails() {

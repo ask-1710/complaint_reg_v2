@@ -4,7 +4,7 @@ import { complaint_reg_v2_backend } from "../../../declarations/complaint_reg_v2
 import { idlFactory } from "../../../declarations/complaint_reg_v2_backend";
 import { useEffect } from "react";
 
-const PoliceDashboard = ({setIsConnected, createActor, setIsNewUser}) => {
+const PoliceDashboard = ({actor , setIsConnected, createActor, setIsNewUser, setIsSetupComplete}) => {
   const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
   const [complaints, setComplaints] = useState([]);
   const [complaintId, setComplaintId] = useState(0);
@@ -14,16 +14,20 @@ const PoliceDashboard = ({setIsConnected, createActor, setIsNewUser}) => {
   const isConnected = location?.state?.isConnected;
 
   useEffect(() => {
+    setIsSetupComplete(true);
     setIsNewUser(false,"police");
     setIsConnected(true);
     
     if (actor == "") createActor();
-  });
+  },[]);
+
+  useEffect(()=>{
+    if(actor!="") getUnassignedComplaints();
+  },[actor])
+  
   async function getUnassignedComplaints() {
     var complaints = await complaint_reg_v2_backend.getUnassignedComplaints();
     console.log(complaints);
-    console.log(complaints[0][1]);
-    console.log(complaints[0][0]);
     // const complaints=[[0, {title: "abc", summary: "sum", date: "12/3/22", location: "delhi"}],
     // [1, {title: "abc", summary: "sum", date: "12/3/22", location: "delhi"}]];
     setComplaints(complaints);
