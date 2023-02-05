@@ -12,6 +12,14 @@ body {
     background-image: radial-gradient(rgb(99, 240, 233), rgb(253, 253, 8));
     overflow: scroll;
   }
+
+  .new-section-container {
+    height: 100vh;
+  }
+
+  .new-section-center { 
+    padding-top: 20vh;
+  }
   
   code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
@@ -52,6 +60,17 @@ body {
     border-radius: 5%;
     display: block  ;
   }
+
+  .wrap-content {
+    word-wrap: normal;
+    word-break:break-all;
+    height: fit-content;
+  }
+
+  .settings-dropdown {
+    width: fit-content;
+  }
+
   /* CSS */
   .button-27 {
     appearance: none;
