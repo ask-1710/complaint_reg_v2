@@ -177,14 +177,19 @@ actor {
     return "Hello, " # name # "!";
   };
   public query ({ caller }) func isNewActor() : async (Bool, Text) {
-    let isUser = userList.get(caller);
-    let isPolice = policeList.get(caller);
-    if (isUser == null or isPolice == null) {
-      return (true, "");
-    } else if(isUser!=null) {
-      return (false, "user");
-    } else {
-      return (false, "police");
+    let isUser:?User = userList.get(caller);
+    let isPolice:?Police = policeList.get(caller);
+
+    switch(isUser) {
+      case (null) {
+        switch(isPolice) {
+          case (null) {return (true, "");};
+          case (?p) {return (false, "police");};
+        };
+      };
+      case (?u) {
+        return (false, "user");
+      };
     };
   };
   public query ({ caller }) func getUserDetails() : async [(Text, User)] {
@@ -251,6 +256,12 @@ actor {
   };
   public query func getRoleRequests() : async [(Principal, Role)] {
     return Iter.toArray<(Principal, Role)>(roleRequests.entries());
+  };
+  public query func getUsers() : async [User] {
+    return Iter.toArray<User>(userList.vals());
+  };
+  public query func getPolice(): async [Police] {
+    return Iter.toArray<Police>(policeList.vals());
   };
   /************** QUERY FUNCTIONS END ***********/
 
