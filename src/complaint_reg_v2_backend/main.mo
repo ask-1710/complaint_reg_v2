@@ -163,6 +163,13 @@ actor {
       case (_) return false;
     };
   };
+  private func canAssignRole(principal: Principal) : Bool {
+    let role = getRole(principal);
+    switch (role) {
+      case (?#administrator) return true;
+      case (_) return false;
+    };
+  };
   /************** PERMISSION HELPERS END ***********/
 
   /************** QUERY FUNCTIONS START ***********/
@@ -242,11 +249,16 @@ actor {
       };
     };
   };
+  public query func getRoleRequests() : async [(Principal, Role)] {
+    return Iter.toArray<(Principal, Role)>(roleRequests.entries());
+  };
   /************** QUERY FUNCTIONS END ***********/
 
   /************** UPDATE FUNCTIONS END ***********/
   public shared ({ caller }) func addUser(name : Text, role : Text, address : Text) : async Text {
-    requestRole(caller, role);
+    // requestRole(caller, role);
+    let actualRole = textToRole(role);
+    roleRequests.put(caller, actualRole);    
     userList.put(caller, { name = name; complaints = []; address = address });
     switch (userList.get(caller)) {
       case (null) {
@@ -258,7 +270,9 @@ actor {
     };
   };
   public shared ({ caller }) func addPolice(name : Text, designation : Text, role : Text) : async Text {
-    requestRole(caller, role);
+    // requestRole(caller, role);
+    let actualRole = textToRole(role);
+    roleRequests.put(caller, actualRole);
     policeList.put(caller, { name = name; designation = designation; activeComplaints = []; numSolvedCases = 0; numUnsolvedCases = 0 });
     return "Hii " # name # ", Police with principal " # Principal.toText(caller) # " has been created!";
   };
@@ -297,6 +311,11 @@ actor {
       };
     };
     return finalResult;
+  };
+  public shared ({ caller }) func setRole(principal: Principal, role: Text) {
+    roleRequests.delete(principal);
+    let actualRole = textToRole(role);
+    assignedRoles.put(principal, actualRole);
   };
   /************** UPDATE FUNCTIONS END ***********/
 };
