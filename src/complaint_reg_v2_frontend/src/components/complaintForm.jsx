@@ -36,7 +36,7 @@ const ComplaintForm = ({createActor, actor}) => {
               <input
                 type="text"
                 className="form-control col-6"
-                placeholder="Enter title"
+                placeholder="Enter short description(in less than 50 words)"
                 value={newComplaint.title}
                 onChange={(e) => {
                   setNewComplaint({

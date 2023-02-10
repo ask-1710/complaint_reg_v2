@@ -114,11 +114,11 @@ const UserDashboard = ({
                           className="list-group-item my-2 list-group-item-action align-items-start"
                           data-toggle="list"
                         >
-                          <ul>
-                            <li>{complaint[1].title}</li>
-                            <li>{complaint[1].summary}</li>
-                            <li>{complaint[1].date}</li>
-                            <li>{complaint[1].location}</li>
+                          <ul className="complaint-list">
+                            <li><b>Short description</b>{' : ' + complaint[1].title}</li>
+                            <li><b>Summary of incident</b>{' : ' + complaint[1].summary}</li>
+                            <li><b>Date of occurence</b>{' : ' + complaint[1].date}</li>
+                            <li><b>Location of occurence</b>{' : ' + complaint[1].location}</li>
                             <li>
                               {possibleStages[
                                 Object.keys(complaint[1].status)[0]

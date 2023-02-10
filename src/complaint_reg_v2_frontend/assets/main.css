@@ -140,6 +140,10 @@ body {
     margin-top: 0 !important;
     font-weight: bold;
   }
+
+  .complaint-list{
+    list-style-type: none;
+  }
   
   /* The typing effect */
   @keyframes typing {
