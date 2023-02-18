@@ -1,16 +1,17 @@
 import React, { useEffect } from "react";
-import ReactDOM from "react-dom/client";
 import Switch from "react-switch";
 import { useState } from "react";
-import { Card } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 const Registeration = ({ actor, principalId , setIsNewUser }) => {
-  const [userInfo, setUserInfo] = useState({ name: "", address: "" });
+  const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "" });
   const [policeInfo, setPoliceInfo] = useState({
     name: "",
     designation: "",
-    role: "",
+    role: "investigator",
+    stationCode: "",
+    stationAddress: "",
+    mobileNum: ""
   });
   const [isUser, setIsUser] = useState(false);
   const [hasRoleChosen, setHasRoleChosen] = useState(false);
@@ -18,7 +19,7 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
 
   const createUser = async () => {
     console.log("Calling add user function");
-    const createdUserResp = await actor.addUser(userInfo.name, "user",userInfo.address);
+    const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address);
     console.log(createdUserResp);
     setIsNewUser(false)
     navigate("/userdashboard", { state: { principalId , isConnected: true } });
@@ -108,7 +109,7 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                   }}
                 ></input>
               </div>
-              <div className="row mt-2">
+              {/* <div className="row mt-2">
                 <div className="col-4">
                     <p className="placeholder-text-color">Enter Role</p>
                 </div>
@@ -147,7 +148,7 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                 />
                 General
               </div>
-              </div>
+              </div> */}
               <div className="row mt-2 justify-content-center">
                 <input
                   type="type"
@@ -164,6 +165,55 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                   }}
                 />
               </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter station code"
+                  type="text"
+                  id="stationCode"
+                  name="stationCode"
+                  value={policeInfo.stationCode}
+                  onChange={(ev) => {
+                    setPoliceInfo({
+                      ...policeInfo,
+                      ["stationCode"]: ev.target.value,
+                    });
+                  }}
+                ></input>
+              </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter station address"
+                  type="text"
+                  id="stationAddress"
+                  name="stationAddress"
+                  value={policeInfo.stationAddress}
+                  onChange={(ev) => {
+                    setPoliceInfo({
+                      ...policeInfo,
+                      ["stationAddress"]: ev.target.value,
+                    });
+                  }}
+                ></input>
+              </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter mobile number"
+                  type="text"
+                  id="mobileNum"
+                  name="mobileNum"
+                  value={policeInfo.mobileNum}
+                  onChange={(ev) => {
+                    setPoliceInfo({
+                      ...policeInfo,
+                      ["mobileNum"]: ev.target.value,
+                    });
+                  }}
+                ></input>
+              </div>
+
               <button
                 className="mt-4 button-27"
                 type="submit"
