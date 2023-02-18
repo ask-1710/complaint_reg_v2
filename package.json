@@ -2,7 +2,12 @@
   "name": "complaint_reg_v2_frontend",
   "version": "0.1.0",
   "description": "Internet Computer starter application",
-  "keywords": ["Internet Computer", "Motoko", "JavaScript", "Canister"],
+  "keywords": [
+    "Internet Computer",
+    "Motoko",
+    "JavaScript",
+    "Canister"
+  ],
   "scripts": {
     "build": "webpack",
     "prebuild": "npm run generate",
@@ -35,5 +40,19 @@
     "last 2 firefox version",
     "last 2 safari version",
     "last 2 edge version"
-  ]
+  ],
+  "dependencies": {
+    "bootstrap": "^5.2.3",
+    "css-loader": "^6.7.3",
+    "less-loader": "^11.1.0",
+    "react": "^18.2.0",
+    "react-bootstrap": "^2.7.0",
+    "react-date-picker": "^9.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.7.0",
+    "react-switch": "^7.0.0",
+    "sass-loader": "^13.2.0",
+    "style-loader": "^3.3.1",
+    "ts-loader": "^9.4.2"
+  }
 }

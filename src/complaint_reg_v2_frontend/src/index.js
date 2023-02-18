@@ -1,19 +1,20 @@
-import { complaint_reg_v2_backend } from "../../declarations/complaint_reg_v2_backend";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
+import UserDashboard from "./pages/UserDashboard";
+import PoliceDashboard from "./pages/PoliceDashboard";
 
-document.querySelector("form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const button = e.target.querySelector("button");
+const root = ReactDOM.createRoot(document.getElementById("app"));
 
-  const name = document.getElementById("name").value.toString();
+root.render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);
 
-  button.setAttribute("disabled", true);
-
-  // Interact with foo actor, calling the greet method
-  const greeting = await complaint_reg_v2_backend.greet(name);
-
-  button.removeAttribute("disabled");
-
-  document.getElementById("greeting").innerText = greeting;
-
-  return false;
-});
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+// reportWebVitals();
