@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import Switch from "react-switch";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import * as eccryptoJS from 'eccrypto-js';
 
 const Registeration = ({ actor, principalId , setIsNewUser }) => {
   const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "" });
@@ -19,17 +20,22 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
 
   const createUser = async () => {
     console.log("Calling add user function");
-    const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address);
+    const keyPair = eccryptoJS.generateKeyPair();
+    localStorage.setItem("userPrivateKey", keyPair.privateKey);
+    const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address, keyPair.publicKey.toString()); // public key
     console.log(createdUserResp);
     setIsNewUser(false)
     navigate("/userdashboard", { state: { principalId , isConnected: true } });
   };
   const createPolice = async () => {
     console.log("Calling add police function");
+    const keyPair = eccryptoJS.generateKeyPair();
+    localStorage.setItem("policePrivateKey", keyPair.privateKey);
     const createdPoliceResp = await actor.addPolice(
       policeInfo.name,
       policeInfo.designation,
-      policeInfo.role
+      policeInfo.role,
+      keyPair.publicKey.toString()
     );
     console.log(createdPoliceResp);
     setIsNewUser(false);

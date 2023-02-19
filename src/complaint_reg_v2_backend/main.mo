@@ -63,6 +63,7 @@ actor {
   let roleRequests : HashMap.HashMap<Principal, Role> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let complaintList : HashMap.HashMap<Nat, Complaint> = HashMap.HashMap(32, Nat.equal, Hash.hash);
   let complaintOwnership : HashMap.HashMap<Nat, [Principal]> = HashMap.HashMap(32, Nat.equal, Hash.hash);
+  let keysList: HashMap.HashMap<Principal, Text> = HashMap.HashMap(32, Principal.equal, Principal.hash);
 
   /************ ROLES HELPERS START *************/
   private func getRole(principal : Principal) : ?Role {
@@ -392,11 +393,24 @@ actor {
       };
     }
   };
+  public query func getPublicKeyByPrincipal(principalText: Text): async Text {
+    let principal: Principal = Principal.fromText(principalText);
+    let pubKey = keysList.get(principal);
+    switch(pubKey) {
+      case (null) {
+        return "null";
+      };
+      case (?pKey) {
+        return pKey;
+      };
+    };
+  };
   /************** QUERY FUNCTIONS END ***********/
 
   /************** UPDATE FUNCTIONS END ***********/
-  public shared ({ caller }) func addUser(name : Text, role : Text, address : Text) : async Text {
+  public shared ({ caller }) func addUser(name : Text, role : Text, address : Text, publicKey: Text) : async Text {
     // requestRole(caller, role);
+    keysList.put(caller, publicKey);
     let actualRole = textToRole(role);
     roleRequests.put(caller, actualRole);    
     userList.put(caller, { name = name; complaints = []; address = address });
@@ -409,8 +423,9 @@ actor {
       };
     };
   };
-  public shared ({ caller }) func addPolice(name : Text, designation : Text, role : Text) : async Text {
+  public shared ({ caller }) func addPolice(name : Text, designation : Text, role : Text, publicKey: Text) : async Text {
     // requestRole(caller, role);
+    keysList.put(caller, publicKey);
     let actualRole = textToRole(role);
     roleRequests.put(caller, actualRole);
     policeList.put(caller, { name = name; designation = designation; activeComplaints = []; numSolvedCases = 0; numUnsolvedCases = 0 });
