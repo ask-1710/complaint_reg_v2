@@ -14,7 +14,8 @@ const PoliceDashboard = ({
 }) => {
   const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
   const [complaints, setComplaints] = useState([]);
-  const [complaintId, setComplaintId] = useState(0);
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [updatedStatus, setUpdatedStatus] = useState("");
   const location = useLocation();
   const possibleStages = {
     firregisteration: { step: 1, badgeText: "FIR registeration" },
@@ -47,9 +48,10 @@ const PoliceDashboard = ({
     setComplaints(complaints);
   }
 
-  function updateComplaint(complaintId) {
-    console.log(complaintId);
-    setComplaintId(complaintId);
+  async function updateComplaint(complaintId) {
+    setSelectedComplaint(null);
+    console.log("Updating complaint id "+complaintId+" with status "+updatedStatus);
+    var result = await actor.updateComplaintStatus(complaintId, updatedStatus);
   }
 
   return (
@@ -66,68 +68,94 @@ const PoliceDashboard = ({
           <div className="list-group">
             {complaints.map((complaint) => {
               return (
-                <button
-                  key={complaint[0]}
-                  onDoubleClick={() => {
-                    updateComplaint(complaint[0]);
-                  }}
-                  href="#"
-                  className="list-group-item my-2 list-group-item-action align-items-start"
-                  data-toggle="list"
-                >
-                  <ul className="complaint-list">
-                    <li>
-                      <b>Short description</b>
-                      {" : " + complaint[1].title}
-                    </li>
-                    <li>
-                      <b>Summary of incident</b>
-                      {" : " + complaint[1].summary}
-                    </li>
-                    <li>
-                      <b>Date of occurence</b>
-                      {" : " + complaint[1].date}
-                    </li>
-                    <li>
-                      <b>Location of occurence</b>
-                      {" : " + complaint[1].location}
-                    </li>{" "}
-                    <li>
-                      {possibleStages[Object.keys(complaint[1].status)[0]]
-                        .step < 2 ? (
-                        <Badge bg="warning" text="dark">
-                          {
-                            possibleStages[Object.keys(complaint[1].status)[0]]
-                              .badgeText
-                          }
-                        </Badge>
-                      ) : possibleStages[Object.keys(complaint[1].status)[0]]
-                          .step < 4 ? (
-                        <Badge bg="info" text="dark">
-                          {
-                            possibleStages[Object.keys(complaint[1].status)[0]]
-                              .badgeText
-                          }
-                        </Badge>
-                      ) : possibleStages[Object.keys(complaint[1].status)[0]]
-                          .badgeText == "Solved" ? (
-                        <Badge bg="success" text="dark">
-                          {
-                            possibleStages[Object.keys(complaint[1].status)[0]]
-                              .badgeText
-                          }
-                        </Badge>
-                      ) : (
-                        <Badge bg="danger" text="dark">
-                          {
-                            possibleStages[Object.keys(complaint[1].status)[0]]
-                              .badgeText
-                          }
-                        </Badge>
-                      )}
-                    </li>
-                  </ul>
-                </button>
+                <>
+                {
+                  selectedComplaint == complaint[0] ? ( <>
+                  <div className="flex d-flex flex-column p-2 m-4">
+                    <div>Short description:{" "} <input className="form-control" type="text" value={complaint[1].title} disabled={true}/></div>
+                    <div>Summary: {" "} <textarea className="wrap-content form-control" value={complaint[1].summary} disabled></textarea></div>
+                    <div>Date of occurence: {" "}<input className="form-control" type="text" value={complaint[1].date} disabled={true}/></div>
+                    <div>Location of occurence:{" "} <input className="form-control" type="text" value={complaint[1].location} disabled={true}></input></div>
+                    <div>Status: {" "}<select type="select" className="form-control" value={updatedStatus} onChange={(ev) => {setUpdatedStatus(ev.target.value)}}>
+                      <option value="firregisteration">FIR ongoing</option>  
+                      <option value="investigation">Investigation ongoing</option>
+                      <option value="finalreportfiling">Final Report filing</option>
+                      <option value="solved">Verdict passed</option>
+                      <option value="unsolved">Case abandoned</option>
+                    </select></div>
+                    <div>
+                      <div className="flex d-flex flex-row p-2 m-5">
+                        <div className="m-6 p-6"><button className="button-27" onClick={(ev) => {setSelectedComplaint(null)}}>Cancel</button></div>
+                        <div className="m-6 p-6"><button className="button-27" onClick={(ev) => {updateComplaint(complaint[0])}}>Submit</button></div>
+                      </div>
+                    </div>
+                  </div> </> 
+                  ) : (
+                  <button
+                    key={complaint[0]}
+                    onClick={(ev) => {
+                      setSelectedComplaint(complaint[0]);
+                      setUpdatedStatus(Object.keys(complaint[1].status)[0]);
+                    }}
+                    href="#"
+                    className="list-group-item my-2 list-group-item-action align-items-start"
+                    data-toggle="list"
+                  >
+                    <ul className="complaint-list">
+                      <li>
+                        <b>Short description</b>
+                        {" : " + complaint[1].title}
+                      </li>
+                      <li>
+                        <b>Summary of incident</b>
+                        {" : " + complaint[1].summary}
+                      </li>
+                      <li>
+                        <b>Date of occurence</b>
+                        {" : " + complaint[1].date}
+                      </li>
+                      <li>
+                        <b>Location of occurence</b>
+                        {" : " + complaint[1].location}
+                      </li>{" "}
+                      <li>
+                        {possibleStages[Object.keys(complaint[1].status)[0]]
+                          .step < 2 ? (
+                          <Badge bg="warning" text="dark">
+                            {
+                              possibleStages[Object.keys(complaint[1].status)[0]]
+                                .badgeText
+                            }
+                          </Badge>
+                        ) : possibleStages[Object.keys(complaint[1].status)[0]]
+                            .step < 4 ? (
+                          <Badge bg="info" text="dark">
+                            {
+                              possibleStages[Object.keys(complaint[1].status)[0]]
+                                .badgeText
+                            }
+                          </Badge>
+                        ) : possibleStages[Object.keys(complaint[1].status)[0]]
+                            .badgeText == "Solved" ? (
+                          <Badge bg="success" text="dark">
+                            {
+                              possibleStages[Object.keys(complaint[1].status)[0]]
+                                .badgeText
+                            }
+                          </Badge>
+                        ) : (
+                          <Badge bg="danger" text="dark">
+                            {
+                              possibleStages[Object.keys(complaint[1].status)[0]]
+                                .badgeText
+                            }
+                          </Badge>
+                        )}
+                      </li>
+                    </ul>
+                  </button>
+                )}   
+                </>
               );
             })}
           </div>

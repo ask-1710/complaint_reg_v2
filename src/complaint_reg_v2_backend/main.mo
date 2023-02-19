@@ -171,27 +171,51 @@ actor {
   };
 
   private func transferEvidenceOwnership(principal : Principal, complaintId : Nat) : async Bool { // principal of new investigator
-  try {
-    var pastOwners = complaintOwnership.get(complaintId);
-    switch (pastOwners) {
-      case (null) {
-        complaintOwnership.put(complaintId, [principal]);
-        return await transferActiveCases(null, principal, complaintId);
+    try {
+      var pastOwners = complaintOwnership.get(complaintId);
+      switch (pastOwners) {
+        case (null) {
+          complaintOwnership.put(complaintId, [principal]);
+          return await transferActiveCases(null, principal, complaintId);
+        };
+        case (?arr) {
+          var numOwners = arr.size();
+          var latestOwner = arr[numOwners -1];
+          var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
+          if(result!=false) return false;
+          let newArray = Array.append<Principal>(arr, [principal]);
+          complaintOwnership.put(complaintId, newArray);
+          return true;
+        };
       };
-      case (?arr) {
-        var numOwners = arr.size();
-        var latestOwner = arr[numOwners -1];
-        var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
-        if(result!=false) return false;
-        let newArray = Array.append<Principal>(arr, [principal]);
-        complaintOwnership.put(complaintId, newArray);
-        return true;
+    } catch(err) {
+      return false;
+    };
+    return true;
+  };
+  
+
+  private func textToStatusVariant(status: Text): StatusText {
+    switch(status) {
+      case ("firregisteration") {
+        return #firregisteration;
+      };
+      case ("investigation") {
+        return #investigation;
+      };
+      case ("finalreportfiling") {
+        return #finalreportfiling;
+      };
+      case ("solved") {
+        return #solved;
+      };
+      case ("unsolved") {
+        return #unsolved;
+      };
+      case (_) {
+        return #firregisteration;
       };
     };
-  } catch(err) {
-    return false;
-  };
-  return true;
   };
   /************** COMPLAINT HELPERS END ***********/
 
@@ -438,6 +462,34 @@ actor {
       return await transferEvidenceOwnership(newPolice, complaintId); // WARNING : calling another function to update 
     };
     return false;
+  };
+  public shared ({ caller }) func updateComplaintStatus(complaintId: Nat, status: Text) : async Bool {
+    var variantStatus = status;
+    var reqComplaint = complaintList.get(complaintId);
+    switch(reqComplaint) {
+      case null {
+        return false;
+      };
+      case (?oldComplaint) {
+        try {
+          var newComplaint:Complaint = {
+            title = oldComplaint.title;
+            summary = oldComplaint.summary;
+            FIR = oldComplaint.FIR;
+            chargesheet = oldComplaint.chargesheet;
+            closureReport = oldComplaint.closureReport;
+            date = oldComplaint.date;
+            evidence = oldComplaint.evidence;
+            location = oldComplaint.location;
+            status = textToStatusVariant(status);
+            typee = "cognizable";
+          };
+          complaintList.put(complaintId, newComplaint);
+          return true;
+        }
+        catch(err) { return false ; }
+      };
+    }
   };
   /************** UPDATE FUNCTIONS END ***********/
 };
