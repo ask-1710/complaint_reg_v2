@@ -62,6 +62,7 @@ actor {
   let policeList : HashMap.HashMap<Principal, Police> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let roleRequests : HashMap.HashMap<Principal, Role> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let complaintList : HashMap.HashMap<Nat, Complaint> = HashMap.HashMap(32, Nat.equal, Hash.hash);
+  let complaintOwnership : HashMap.HashMap<Nat, [Principal]> = HashMap.HashMap(32, Nat.equal, Hash.hash);
 
   /************ ROLES HELPERS START *************/
   private func getRole(principal : Principal) : ?Role {
@@ -124,7 +125,74 @@ actor {
   /************** ROLES HELPERS END **************/
 
   /************* COMPLAINT HELPERS START ***************/
+  private func transferActiveCases(oldPrincipal : ?Principal, newPrincipal : Principal, complaintId : Nat) : async Bool {
+    try {
+      var oldPolice : ?Police = null;
+      switch (oldPrincipal) {
+        case (?value) {
+          oldPolice := policeList.get(value);
+          switch (oldPolice) {
+            case (?oldP) {
+              var oldPoliceComplaints = oldP.activeComplaints;
+              oldPoliceComplaints := Array.filter(oldPoliceComplaints, func(complaint : Nat) : Bool { complaint == complaintId });
+              var newPolice : Police = {
+                name = oldP.name;
+                designation = oldP.designation;
+                numSolvedCases = oldP.numSolvedCases;
+                numUnsolvedCases = oldP.numUnsolvedCases;
+                activeComplaints = oldPoliceComplaints;
+              };
+              policeList.put(value, newPolice);
+            };
+            case (null) {};
+          };
+        };
+        case (null) {};
+      };
 
+      var newPolice = policeList.get(newPrincipal);
+      switch (newPolice) {
+        case (?newP) {
+          var newPoliceComplaints = Array.append<Nat>(newP.activeComplaints, [complaintId]);
+          var newPolice : Police = {
+            name = newP.name;
+            designation = newP.designation;
+            numSolvedCases = newP.numSolvedCases;
+            numUnsolvedCases = newP.numUnsolvedCases;
+            activeComplaints = newPoliceComplaints;
+          };
+          policeList.put(newPrincipal, newPolice);
+        };
+        case (null) {};
+      };
+    }
+    catch(err){return false;};
+    return true;
+  };
+
+  private func transferEvidenceOwnership(principal : Principal, complaintId : Nat) : async Bool { // principal of new investigator
+  try {
+    var pastOwners = complaintOwnership.get(complaintId);
+    switch (pastOwners) {
+      case (null) {
+        complaintOwnership.put(complaintId, [principal]);
+        return await transferActiveCases(null, principal, complaintId);
+      };
+      case (?arr) {
+        var numOwners = arr.size();
+        var latestOwner = arr[numOwners -1];
+        var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
+        if(result!=false) return false;
+        let newArray = Array.append<Principal>(arr, [principal]);
+        complaintOwnership.put(complaintId, newArray);
+        return true;
+      };
+    };
+  } catch(err) {
+    return false;
+  };
+  return true;
+  };
   /************** COMPLAINT HELPERS END ***********/
 
   /************** PERMISSION HELPERS START ***********/
@@ -171,6 +239,31 @@ actor {
     };
   };
   /************** PERMISSION HELPERS END ***********/
+
+  /************** RESPONSE HELPERS *****************/
+  private func getDummyPolice(): Police {
+    return {
+      name = "no-police";
+      designation = "na";
+      activeComplaints = [0];
+      numSolvedCases = 0;
+      numUnsolvedCases = 0;
+    };
+  };
+  private func getPoliceFromPrincipals(principals: [Principal]) : [Police] {
+    var polices: [Police] = [] ;
+    for (idx in Iter.range(0, principals.size() -1)) {
+      var police: ?Police = policeList.get(principals[idx]);
+      switch(police) {
+        case null {};
+        case (?p) {
+          polices := Array.append<Police>(polices, [p]);
+        };
+      };
+    };
+    return polices;
+  };
+  /*************************************************/
 
   /************** QUERY FUNCTIONS START ***********/
   public query func greet(name : Text) : async Text {
@@ -263,6 +356,18 @@ actor {
   public query func getPolice(): async [Police] {
     return Iter.toArray<Police>(policeList.vals());
   };
+  public query func getComplaintOwnershipHistory(complaintId: Nat): async [Police] {
+    var owners = complaintOwnership.get(complaintId);
+    switch(owners) {
+      case null {
+        return [getDummyPolice()]
+      };
+      case(?ownerPrincipals) {
+        var ownersObjects = getPoliceFromPrincipals(ownerPrincipals);
+        return ownersObjects;
+      };
+    }
+  };
   /************** QUERY FUNCTIONS END ***********/
 
   /************** UPDATE FUNCTIONS END ***********/
@@ -327,6 +432,12 @@ actor {
     roleRequests.delete(principal);
     let actualRole = textToRole(role);
     assignedRoles.put(principal, actualRole);
+  };
+  public shared ({ caller }) func transferOwnershipTo(complaintId : Nat, newPolice: Principal) : async Bool {
+    if(canTransferEvidence(caller)) {
+      return await transferEvidenceOwnership(newPolice, complaintId); // WARNING : calling another function to update 
+    };
+    return false;
   };
   /************** UPDATE FUNCTIONS END ***********/
 };
