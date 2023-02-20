@@ -32,9 +32,6 @@
     "webpack-cli": "^4.10.0",
     "webpack-dev-server": "^4.8.1"
   },
-  "browser": {
-    "crypto": false
-  },
   "engines": {
     "node": "^12 || ^14 || ^16 || ^18"
   },
@@ -51,6 +48,7 @@
     "css-loader": "^6.7.3",
     "eccrypto": "^1.1.6",
     "eccrypto-js": "^5.4.0",
+    "ipfs-http-client": "^60.0.0",
     "less-loader": "^11.1.0",
     "react": "^18.2.0",
     "react-bootstrap": "^2.7.0",

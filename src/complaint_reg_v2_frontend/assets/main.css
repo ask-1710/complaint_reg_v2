@@ -113,6 +113,11 @@ body {
     box-shadow: none;
     transform: translateY(0);
   }
+
+  .not-button-27 {
+    background-color: #FFFFFF;
+    color: black;
+  }
   
   .vertical-center {
     margin: 0;
@@ -143,6 +148,11 @@ body {
 
   .complaint-list{
     list-style-type: none;
+  }
+
+  .small-right-bottom-button {
+    width: fit-content;
+    float: right;
   }
   
   /* The typing effect */
