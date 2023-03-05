@@ -2,7 +2,8 @@ import React, { useEffect } from "react";
 import Switch from "react-switch";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import * as eccryptoJS from 'eccrypto-js';
+// import * as eccryptoJS from 'eccrypto-js';
+var eccrypto = require("eccrypto");
 
 const Registeration = ({ actor, principalId , setIsNewUser }) => {
   const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "" });
@@ -20,22 +21,24 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
 
   const createUser = async () => {
     console.log("Calling add user function");
-    const keyPair = eccryptoJS.generateKeyPair();
-    localStorage.setItem("userPrivateKey", keyPair.privateKey);
-    const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address, keyPair.publicKey.toString()); // public key
+    const privKey = eccrypto.generatePrivate();
+    localStorage.setItem("userPrivKey", privKey.toString("base64"));
+    const pubKey = eccrypto.getPublic(privKey);
+    const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public key
     console.log(createdUserResp);
     setIsNewUser(false)
     navigate("/userdashboard", { state: { principalId , isConnected: true } });
   };
   const createPolice = async () => {
     console.log("Calling add police function");
-    const keyPair = eccryptoJS.generateKeyPair();
-    localStorage.setItem("policePrivateKey", keyPair.privateKey);
+    const privKey = eccrypto.generatePrivate();
+    localStorage.setItem("policePrivKey", privKey.toString("base64"));
+    const pubKey = eccrypto.getPublic(privKey);
     const createdPoliceResp = await actor.addPolice(
       policeInfo.name,
       policeInfo.designation,
       policeInfo.role,
-      keyPair.publicKey.toString()
+      pubKey.toString("base64")
     );
     console.log(createdPoliceResp);
     setIsNewUser(false);
