@@ -10,6 +10,8 @@ import TrieSet "mo:base/TrieSet";
 import Nat "mo:base/Nat";
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
+import Error "mo:base/Error";
+
 
 actor {
   
@@ -55,7 +57,16 @@ actor {
     numSolvedCases : Nat;
     numUnsolvedCases : Nat;
   };
-  // type PrincipalHistory = [Principal];
+  type EncKey = {
+    principal: Principal; 
+    aesKey: Text;
+    aesIV: Text;
+  };
+  type UserCIDKey = {
+    cid: Text;
+    aesKey: Text;
+    aesIV: Text;
+  };
   var numComplaints : Nat = 0;
   let assignedRoles : HashMap.HashMap<Principal, Role> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let userList : HashMap.HashMap<Principal, User> = HashMap.HashMap(32, Principal.equal, Principal.hash);
@@ -64,6 +75,8 @@ actor {
   let complaintList : HashMap.HashMap<Nat, Complaint> = HashMap.HashMap(32, Nat.equal, Hash.hash);
   let complaintOwnership : HashMap.HashMap<Nat, [Principal]> = HashMap.HashMap(32, Nat.equal, Hash.hash);
   let keysList: HashMap.HashMap<Principal, Text> = HashMap.HashMap(32, Principal.equal, Principal.hash);
+  let uploaderAESKeys: HashMap.HashMap<Text, EncKey> = HashMap.HashMap(32, Text.equal, Text.hash); // uploader's keys for a file
+  let userAESKeys: HashMap.HashMap<Principal, [UserCIDKey]> = HashMap.HashMap(32, Principal.equal, Principal.hash); // keys for files user has access to
 
   /************ ROLES HELPERS START *************/
   private func getRole(principal : Principal) : ?Role {
@@ -505,6 +518,63 @@ actor {
         catch(err) { return false ; }
       };
     }
+  };
+  public shared ({ caller }) func addEvidence(complaintId: Nat, fileCID: Text, encAESKey: Text, AESiv: Text): async Bool {
+    // add CID to complaint
+    // add uploader, aes key, aes iv to uploaderAESKeys
+    // add key to uploaders access keys
+    var complaintObj = complaintList.get(complaintId);
+    switch(complaintObj) {
+      case(null) { return false; };
+      case(?oldComplaint) { 
+        try {
+          var evidences = oldComplaint.evidence;
+          evidences := Array.append<Text>(evidences, [fileCID]);
+          var newComplaint = {
+            title = oldComplaint.title;
+            summary = oldComplaint.summary;
+            date = oldComplaint.date;
+            location = oldComplaint.location ;
+            typee = oldComplaint.typee ;
+            evidence = evidences; // CIDs
+            status = oldComplaint.status;
+            FIR = oldComplaint.FIR ;// CID - step1
+            chargesheet = oldComplaint.chargesheet; // CID
+            closureReport = oldComplaint.closureReport // CID
+          };
+
+          var uploadersKeys = uploaderAESKeys.put(fileCID, {
+            principal = caller;
+            aesKey = encAESKey;
+            aesIV = AESiv;
+          });
+
+          var userKeys  = userAESKeys.get(caller);
+          switch(userKeys) {
+            case null {
+              userAESKeys.put(caller, [{
+                cid = fileCID;
+                aesKey = encAESKey;
+                aesIV = AESiv;
+              }]);
+            };
+            case(?oldKeys) {
+                var newKeys = Array.append<UserCIDKey>(oldKeys, [{
+                  cid = fileCID;
+                  aesKey = encAESKey;
+                  aesIV = AESiv;
+                }]);
+                userAESKeys.put(caller, newKeys);
+            }; 
+          };
+          return true;
+        } catch(err) {
+          Debug.print("Error occured while saving evidence for complaint " # Nat.toText(complaintId));
+          return false;
+        }
+      };
+    };
+    return false;
   };
   /************** UPDATE FUNCTIONS END ***********/
 };
