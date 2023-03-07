@@ -155,6 +155,10 @@ body {
     float: right;
   }
   
+  .small-button {
+    width: fit-content;
+  }
+  
   /* The typing effect */
   @keyframes typing {
     from { width: 0 }
