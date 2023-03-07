@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { complaint_reg_v2_backend } from "../../../declarations/complaint_reg_v2_backend";
 import { idlFactory } from "../../../declarations/complaint_reg_v2_backend";
 import { useEffect } from "react";
 import { Badge } from "react-bootstrap";
 import { create } from "ipfs-http-client";
+var eccrypto = require("eccrypto");
+const CryptoJS = require("crypto-js")
 
 const PoliceDashboard = ({
   actor,
@@ -20,6 +22,7 @@ const PoliceDashboard = ({
   const [addingEvidence, setAddingEvidence] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([])
 
+  const navigate = useNavigate();
   const location = useLocation();
   const possibleStages = {
     firregisteration: { step: 1, badgeText: "FIR registeration" },
@@ -31,6 +34,13 @@ const PoliceDashboard = ({
 
   const principalId = location?.state?.principalId;
   const isConnected = location?.state?.isConnected;
+  // const key = eccryptoJS.randomBytes(32);
+  // const iv = eccryptoJS.randomBytes(16); // store as [encKey, IV] in ic
+  const key = "secretsecretsecr"
+  const iv = "secretiv"
+  const ipfs = create({
+    url: "http://127.0.0.1:5002/",
+  });
 
   useEffect(() => {
     setIsSetupComplete(true);
@@ -60,18 +70,56 @@ const PoliceDashboard = ({
 
   async function uploadEvidences(e) {
     const chosenFiles = Array.prototype.slice.call(e.target.files)  
-    console.log(chosenFiles);
     setUploadedFiles(chosenFiles);
   }
 
-  async function saveEvidences(ev) {
-    const ipfs = await create({
-      url: "http://127.0.0.1:5002/",
+  async function saveEvidences(complaintId, _ev) {
+    // generate AES key & iv
+    // encrypt file with AES key
+    // save file in IPFS
+    // encrypt AES key with ECC key
+    // store { complaintId, fileCID, AESKey, AESiv } in ic
+    const file = uploadedFiles[0]; // accepts only one file
+    let fr = new FileReader();
+    fr.onload = async function(e) {
+      const binaryString = e.target.result;
+      const parts = binaryString.split(";base64,")[1];
+            
+      const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key,{padding: CryptoJS.pad.NoPadding}); // added padding
+      const result = await ipfs.add(encrypted.toString());
+      console.log(result.path);
+      // const myPublicKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principalId);
+      // console.log("My public key : "+myPublicKey);
+      // const aesSymmetricKey = Buffer.from(key);
+      // const pubKey = eccryptoJS.utf8ToBuffer(myPublicKey);
+      // var encAESKey = await eccryptoJS.encrypt(pubKey, aesSymmetricKey);
+      // console.log(encAESKey.toString());
+      // eccrypto.encrypt(pubKey, aesSymmetricKey).then(function(encrypted) {
+      //   // B decrypting the message.
+      //   console.log(encrypted);
+      //   eccrypto.decrypt(privateKeyB, encrypted).then(function(plaintext) {
+      //     console.log("Message to part B:", plaintext.toString());
+      //   });
+      // });
+      await encryptAESKeyAndSave(key,complaintId, result.path);
+
+      // await actor.addEvidence(complaintId, result.path, encAESKey, iv);
+   }
+    fr.readAsDataURL(file);
+  }
+
+  async function encryptAESKeyAndSave(aesKey,complaintId, fileCID) {
+    const principalId = window.ic.plug.sessionManager.sessionData.principalId;
+    const pubKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principalId); // encryption with public key
+    const polPubKey = Buffer.from(pubKey, "base64");
+    const aesSymmetricKey = Buffer.from(aesKey, "base64");
+    eccrypto.encrypt(polPubKey, aesSymmetricKey).then(async function(encrypted) {
+      const encStringified = JSON.stringify(encrypted);
+      // store encrypted aes key
+      const result = await actor.addEvidence(complaintId, fileCID, encStringified, "");
+      console.log(result);
     });
     
-    const file = uploadedFiles[0];
-    const result = await ipfs.add(file);
-    console.log(result)
   }
 
   return (
@@ -251,13 +299,14 @@ const PoliceDashboard = ({
                             <p className="flex-box label-text">Upload one or more files</p>
                             <input className="form-control" onChange={(ev)=>{uploadEvidences(ev)}} type="file" multiple accept="application/pdf , image/png, image/jpg, image/jpeg"></input>
                             {uploadedFiles.map(file=>{return <Badge text="dark" bg="warning">{file.name}</Badge>})}
-                            <button className="button-27 small-right-bottom-button" onClick={(ev)=>{saveEvidences(ev)}}>Save</button>
+                            <button className="button-27 small-right-bottom-button" onClick={(ev)=>{saveEvidences(complaint[0], ev)}}>Save</button>
                             <button className="button-27 not-button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(false);}}>Cancel</button>
                             </>
                           ):(
                             <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);}}>Add evidence</button>
                           )
                         }
+                        <button className="button-27 small-button" onClick={()=>{navigate(`/complaintview/${complaint[0]}`, {state: {userType: "police"}})}}>View details</button>
                       </div>
                     </div>
                   )}
@@ -272,3 +321,200 @@ const PoliceDashboard = ({
 };
 
 export default PoliceDashboard;
+
+/*
+TRIED CODES:
+
+<iframe src="/uploads/media/default/0001/01/540cb75550adf33f281f29132dddd14fded85bfc.pdf#toolbar=0" width="100%" height="500px">
+
+
+  async function encryptEvidence(buff) {
+    // const ciphertext = await eccryptoJS.aesCbcEncrypt(iv, key, file);  -> does not work
+    // const wordArray = CryptoJS.lib.WordArray.create(file);
+    // const str = CryptoJS.enc.Base64.stringify(wordArray); // -> passing base64 encoded string to encrypt
+    // const ciphertext = CryptoJS.AES.encrypt(str, key).toString(CryptoJS.format.OpenSSL); // decrypted string in base64
+    // console.log(ciphertext);
+    // return ciphertext.toString(); // pass base64 encoded format to decryption function
+    // let linearFile = Buffer.from(file).toString('latin1'); // change to utf8 encoding
+    // let wordArray = CryptoJS.enc.Latin1.parse(linearFile);
+    // let parsedKey = CryptoJS.enc.Latin1.stringify(CryptoJS.enc.Utf8.parse(key));
+    // let encData = CryptoJS.AES.encrypt(wordArray, parsedKey).toString(CryptoJS.enc.Latin1);
+    // let encData = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(encJson))
+
+    // return encData; // returns base64
+     
+    // using crypto library 
+    // const key = crypto.randomBytes(16).toString('hex'); // 16 bytes -> 32 chars
+    // localStorage.setItem("AESkey", key);
+    // const iv = crypto.randomBytes(8).toString('hex');   // 8 bytes -> 16 chars
+    // localStorage.setItem("AESiv", iv);
+    // const cipher = crypto.createCipheriv('aes-256-ctr', key, iv);
+    // const data = cipher.update(buff); // returns buffer
+    // const encrypted = Buffer.concat([data, cipher.final()]);
+    // return encrypted.toString('hex') // input is of format hex converted to 2-digit hex char
+
+  }
+
+
+  function uintToString(uintArray) {
+    var decodedStr = new TextDecoder("utf-8").decode(uintArray);
+    return decodedStr;
+  }
+
+
+  const wordArrayToByteArray = (hash) => {
+    console.log("inside wordArrayToByteArray");
+    return hash.words
+      //map each word to an array of bytes
+      .map(function(v){
+        console.log("inside wordArrayToByteArray loop");
+        // create an array of 4 bytes (less if sigBytes says we have run out)
+        var bytes = [0,0,0,0].slice(0,Math.min(4,hash.sigBytes))
+          // grab that section of the 4 byte word
+          .map(function(d,i){ return (v >>> (8*i)) % 256; })
+          // flip that
+          .reverse()
+          ;
+        // remove the bytes we've processed 
+        // from the bytes we need to process
+        hash.sigBytes -= bytes.length;
+        return bytes;
+      })
+      // concatinate all the arrays of bytes
+      .reduce(function(a,d){ return a.concat(d);},[])
+      // convert the 'bytes' to 'characters'
+      // .map(function(d){return String.fromCharCode(d);})
+      // create a single block of memory
+      // .join('')
+      ;
+  }
+
+
+  function wordToByteArray(word, length) {
+    var ba = [],
+      i,
+      xFF = 0xFF;
+    if (length > 0)
+      ba.push(word >>> 24);
+    if (length > 1)
+      ba.push((word >>> 16) & xFF);
+    if (length > 2)
+      ba.push((word >>> 8) & xFF);
+    if (length > 3)
+      ba.push(word & xFF);
+  
+    return ba;
+  }
+  
+  function wordArrayToByteArray(wordArray, length) {
+    if (wordArray.hasOwnProperty("sigBytes") && wordArray.hasOwnProperty("words")) {
+      length = wordArray.sigBytes;
+      wordArray = wordArray.words;
+    }
+  
+    var result = [],
+      bytes,
+      i = 0;
+    while (length > 0) {
+      bytes = wordToByteArray(wordArray[i], Math.min(4, length));
+      length -= bytes.length;
+      result.push(bytes);
+      i++;
+    }
+    return result.flat();
+  }
+   
+  async function decryptFileByCID(cid) {
+  //   console.log("get ipfs");
+  //   const file  = ipfs.get(cid); // file is a string
+  //   const fileBufferArray = []
+  //   for await (const chunk of file) {
+  //     fileBufferArray.push(chunk)
+  //   } 
+  //  const buffer = Buffer.concat(fileBufferArray); // encrypted result from ipfs
+
+   // get buffer from uploaded file
+    const uploadedFile = uploadedFiles[0];
+    let fr = new FileReader();
+    let upBuffer;
+    let upEncrypted;
+    fr.onload = async function(e) {
+    //   upBuffer = Buffer.from(e.target.result); // array buffer
+    //   upEncrypted = await encryptEvidence(upBuffer) // returned in hex encoding
+    //   // console.log(upEncrypted);
+    // //   // // // // upload to IPFS
+    //   const result = await ipfs.add(upEncrypted) // upload base64 encoding of encrypted data
+    //   console.log(result.path);
+
+      // // download file
+      // console.log('--DOWNLOAD FILE FROM IPFS----');
+      // const downFile = ipfs.get(result.path);
+      // const key = localStorage.getItem("AESkey").toString("utf8")
+      // const iv = localStorage.getItem("AESiv").toString("utf8");
+      // const downFile = ipfs.get("QmU7GnXnJb6aLRXASsWTXFqWzEpYyvu8fcDKtdciKJT5Xh"); // uint8array[] -> base64 string -> decrypt -> utf8 -> json.parse -> buffer as uf8 -> blob -> save
+      // var chunks = []
+      // // var str = ""
+      // for await (const chunk of downFile) {
+      //   // str += decoder.decode(chunk, {stream: true});
+      //   chunks.push(chunk);
+      // } 
+      // // // // // // str += decoder.decode();
+      // // // // // // const str64 = Buffer.from(chunks).toString('base64');
+      // const ebuf = Buffer.concat(chunks);// output data of format utf8
+
+      // const decipher = crypto.createDecipheriv('aes-256-ctr', key, iv);
+      // const data = decipher.update(ebuf)
+      // const decrpyted = Buffer.concat([data, decipher.final()]);
+
+      // const outFile = new Blob([decrpyted], {type: "application/pdf"});
+      // FileSaver.saveAs(outFile, "filename.pdf");
+    
+      // const parsedKey = CryptoJS.enc.Latin1.stringify(CryptoJS.enc.Utf8.parse(key));
+      // // const decData = CryptoJS.enc.Latin1.parse(str64).toString(CryptoJS.enc.Latin1) // utf8 -> base64
+      // const bytes = CryptoJS.AES.decrypt(strLatin, parsedKey);
+      // const decJSON = CryptoJS.enc.Latin1.stringify(bytes); 
+      // console.log(JSON.parse(decJSON.toString()));
+
+      // let decData = CryptoJS.enc.Base64.parse(str64).toString(CryptoJS.enc.Utf8)
+      // console.log("decData " + decData.toString('base64'))
+      // let bytes = CryptoJS.AES.decrypt(decData, key).toString(CryptoJS.enc.Utf8)
+      // const fileBufferArray = JSON.parse(bytes)
+      // console.log(fileBufferArray.file);
+      // const outFile = new Blob(fileBufferArray.file, {type: "application/pdf"});
+      // FileSaver.saveAs(outFile, "filename.pdf");
+
+     
+      // // console.log(typeof(strBase64));
+      // // // // // // decrypt
+      // // // // console.log(str);
+      // const strBase64 = CryptoJS.enc.Base64.parse(str64);
+      // const decrypted = CryptoJS.AES.decrypt(strBase64, key); // fileBlob in utf8 encoding
+      // const decStr = decrypted.toString(CryptoJS.enc.Utf8)
+      // const outFile = new Blob([decStr], {type: "application/pdf"});
+      // FileSaver.saveAs(outFile, "filename.pdf");
+
+      // const wordArray = CryptoJS.enc.Hex.parse(decStr);
+      // const BaText = wordArrayToByteArray(wordArray, wordArray.length);
+      // var arrayBufferView = new Uint8Array(BaText);
+      // var blob = new Blob( [ arrayBufferView ], { type: "application/pdf" } );
+      // FileSaver.saveAs(blob, "filename.pdf");
+    }
+    fr.readAsArrayBuffer(uploadedFile);
+
+
+    // console.log(iv);
+    // console.log(key);
+    // console.log(buffer.toString());
+    // try {
+      // const decrypted = await eccryptoJS.aesCbcDecrypt(iv, key, downArrayBuffer);
+    //   console.log("File decrypted" + decrypted.toString());
+    //   // console.log(decrypted.toString());
+    //   // const fileObject = new File([decrypted]);
+    //   // console.log('File object : ' + fileObject)
+    // } catch(err) {
+    //   console.log(err);
+    // }
+  }
+
+  
+  */
