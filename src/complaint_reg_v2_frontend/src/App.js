@@ -3,23 +3,26 @@ import Registeration from "./components/registeration";
 import PoliceDashboard from "./pages/PoliceDashboard";
 import React, { useState, useEffect } from "react";
 import UserDashboard from "./pages/UserDashboard";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { complaint_reg_v2_backend } from "../../declarations/complaint_reg_v2_backend";
 import { idlFactory } from "../../declarations/complaint_reg_v2_backend";
+import ComplaintView from "./pages/ComplaintView";
+import FileFrame from "./components/fileFrame";
 
 const App = function () {
   const [actor, setActor] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [principalId, setPrincipalId] = useState("");
   const [publicKey, setPublicKey] = useState("");
-  const [isSetupComplete, setIsSetupComplete ] = useState(false);
+  const [isSetupComplete, setIsSetupComplete] = useState(false);
   const [isNewUser, setIsNewUser] = useState([true, ""]);
   const navigate = useNavigate();
 
   const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
   const whitelist = [nnsCanisterId];
   const host = "http://127.0.0.1:4943";
+  const pathname = useLocation().pathname;
 
   useEffect(() => {
     if (isConnected) createActor();
@@ -122,34 +125,77 @@ const App = function () {
 
   return (
     <div className="body-container">
-      {isConnected && isSetupComplete ? (
-        isNewUser[0] && (
-          <Registeration
-            actor={actor}
-            principalId={principalId}
-            setIsNewUser={setIsNewUser}
-          />
-        )
-      ) : (
-        <div className="registeration-card">
-          <div className="center">
-            <div className="typewriter">
-              <p>All you have to do to login is connect with plug wallet!</p>
+      {pathname == "/" && (
+        <>
+          {isConnected && isSetupComplete ? (
+            isNewUser[0] && (
+              <Registeration
+                actor={actor}
+                principalId={principalId}
+                setIsNewUser={setIsNewUser}
+              />
+            )
+          ) : (
+            <div className="registeration-card">
+              <div className="center">
+                <div className="typewriter">
+                  <p>
+                    All you have to do to login is connect with plug wallet!
+                  </p>
+                </div>
+                <br />
+                <button
+                  className="plug-button button-27"
+                  onClick={connectToPlug}
+                  value="Connect to plug"
+                >
+                  Connect to Plug
+                </button>
+              </div>
             </div>
-            <br />
-            <button
-              className="plug-button button-27"
-              onClick={connectToPlug}
-              value="Connect to plug"
-            >
-              Connect to Plug
-            </button>
-          </div>
-        </div>
+          )}
+        </>
       )}
+
       <Routes>
-        <Route path="/userdashboard" element={<UserDashboard setIsConnected={setIsConnected} createActor={createActor} setIsNewUser={setIsNewUser} actor={actor} setIsSetupComplete={setIsSetupComplete}/>}></Route>
-        <Route path="/policedashboard" element={<PoliceDashboard setIsConnected={setIsConnected} createActor={createActor} setIsNewUser={setIsNewUser} actor={actor} setIsSetupComplete={setIsSetupComplete}/>}></Route>
+        <Route
+          path="/userdashboard"
+          element={
+            <UserDashboard
+              setIsConnected={setIsConnected}
+              createActor={createActor}
+              setIsNewUser={setIsNewUser}
+              actor={actor}
+              setIsSetupComplete={setIsSetupComplete}
+            />
+          }
+        ></Route>
+        <Route
+          path="/policedashboard"
+          element={
+            <PoliceDashboard
+              setIsConnected={setIsConnected}
+              createActor={createActor}
+              setIsNewUser={setIsNewUser}
+              actor={actor}
+              setIsSetupComplete={setIsSetupComplete}
+            />
+          }
+        ></Route>
+        <Route
+          path="/complaintview/:complaintId"
+          element={
+            <ComplaintView
+              createActor={createActor}
+              actor={actor}
+              setIsConnected={setIsConnected}
+              setIsSetupComplete={setIsSetupComplete}
+              setIsNewUser={setIsNewUser}
+            />
+          }
+        >
+          <Route path=":cid" element={<FileFrame />} />
+        </Route>
       </Routes>
     </div>
   );
