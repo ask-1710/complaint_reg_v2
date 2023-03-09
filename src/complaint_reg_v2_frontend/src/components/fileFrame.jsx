@@ -19,6 +19,7 @@ const FileFrame = ({actor, createActor}) => {
     const [hasAccess, setHasAccess] = useState(null);
     const [hasRequestedAccess, setHasRequestedAccess] = useState(false);
     const [isFileOwner, setIsFileOwner] = useState(false);
+    const [fileRequests, setFileRequests] = useState([]);
 
     const location = useLocation();
     const userType = location?.state?.userType;
@@ -35,13 +36,14 @@ const FileFrame = ({actor, createActor}) => {
     const startActivity = async () => {
         if(userType == "police") {
             console.log("is police");
-            const getRequests = await actor.getFileAccessRequests(cid); // TO BE IMPLEMENTED
-            if(getRequests.length > 1) {  // POINT TO NOTE, LENGTH==1 IS INVALID
-                setIsFileOwner(true);
-                console.log(getRequests);
-                console.log("more than 1");
+            const getRequests = await actor.getFileAccessRequests(cid);
+            if(getRequests.length == 1 && getRequests[0][0]=="") {
+                setIsFileOwner(false);
+                return;
             }
-            console.log(getRequests[0][0], getRequests[0][1]);
+            setIsFileOwner(true);
+            console.log(getRequests);
+            setFileRequests(getRequests);
         }
     };
 
@@ -119,12 +121,12 @@ const FileFrame = ({actor, createActor}) => {
 
     return (
         <div className='container'>
-            <button onClick={()=>{encryptFileByCID}}>Click to view</button>
+            <button className='button-27 mt-4' onClick={()=>{encryptFileByCID();}}>Click to view</button>
             {
                 hasAccess!=null && hasAccess==false && ( 
                     !hasRequestedAccess ? (
                         <>
-                            <div class="alert alert-info" role="alert">
+                            <div className="alert alert-info mt-4" role="alert">
                                 You do not have access to view this file
                             </div>
                             <button className='button-27' onClick={()=>{requestAccessByCID()}}>Click to Request Access</button>
@@ -140,10 +142,24 @@ const FileFrame = ({actor, createActor}) => {
             }    
             {
                 isFileOwner && (
-                    <>
-                    <p>You are file owner!!</p>
-                    <p>Please find access requests for this file below</p>
-                    </>
+                    <div className='mt-4'>
+                        <p>You are file owner!!</p>
+                        <p>Please find access requests for this file below</p>
+                        {
+                            fileRequests.length>0 && fileRequests.map(req => {
+                                return (
+                                <div key={req[0]} className='flex d-flex row'>
+                                    <div className='col'>
+                                        <p>Name : {req[1].name}</p>
+                                    </div>
+                                    <div className='col'>
+                                        <p>User category :{req[1].category} </p>
+                                    </div>
+                                </div>
+                                )
+                            })
+                        }
+                    </div>
                 ) 
             }
         </div>

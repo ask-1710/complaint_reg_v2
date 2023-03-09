@@ -85,6 +85,12 @@ actor {
     assignedStationCode: Text;
     ownershipHistory: [Police];   
   };
+
+  type FileRequestor = {
+    category : Text; // police / complainant
+    name: Text; 
+  };
+
   var numComplaints : Nat = 0;
   let assignedRoles : HashMap.HashMap<Principal, Role> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let userList : HashMap.HashMap<Principal, User> = HashMap.HashMap(32, Principal.equal, Principal.hash);
@@ -353,11 +359,11 @@ actor {
 
   };
   private func isFileOwner(caller: Principal, cid: Text): Bool {
-    var ownerPrincipal = uploaderAESKeys.get(cid);
+    var ownerPrincipal: ?EncKey = uploaderAESKeys.get(cid);
     switch(ownerPrincipal) {
       case(null) {return false;};
       case(?owner) {
-        if(Principal.toText(owner.principal) == Principal.toText(caller)) {
+        if(owner.principal == caller) {
           Debug.print(Principal.toText(caller) # "Is file owner");
           return true;
         } else {
@@ -430,6 +436,16 @@ actor {
       assignedStationCode = "";
       ownershipHistory = [getDummyPolice()];
     };
+  };
+  private func convertPrincipalsToText(principals: [Principal]): [Text] {
+    var textVariant:[Text] = [];
+    for (idx in Iter.range(0, principals.size() -1)) {
+      let currPrincipal = principals[idx];
+      let textP = Principal.toText(principals[idx]);
+      textVariant := Array.append<Text>(textVariant, [textP]);
+    };
+
+    return textVariant;
   };
   /*************************************************/
 
@@ -595,34 +611,55 @@ actor {
       };
     };
   };
-  // IN-PROGRESS - display file access requests does not work
-  public query ({ caller }) func getFileAccessRequests(cid: Text) : async [(Text, User)] {
-    var dummyUsers: [(Text, User)] = [("", getDummyUser())];
-    if(isFileOwner(caller, cid)) {
-      var requestsForCID = userFileAccessRequests.get(cid);
+  // IN-PROGRESS - display file access requests does not work;returns no requests
+  public query ({ caller }) func getFileAccessRequests(cid: Text) : async [(Text, FileRequestor)] {
+    var dummyUsers: [(Text, FileRequestor)] = [("", {category="";name=""})];
+    let isOwner = isFileOwner(caller, cid);
+    if(isOwner) {
+      var requestsForCID: ?[Principal] = userFileAccessRequests.get(cid);
       switch(requestsForCID) {
         case(null) {
+          Debug.print("No requests for file with cid "#cid);
           return dummyUsers;
         };
         case(?requests) {
-          var userPrincipalList = dummyUsers;
+          var userPrincipalList: HashMap.HashMap<Text, FileRequestor> = HashMap.HashMap(32, Text.equal, Text.hash);
+          Debug.print("Number of requests for "#cid#" : "#Nat.toText(requests.size()));
           for (idx in Iter.range(0, requests.size() -1)) {
-            let userPrincipal = requests[idx];
+            let userPrincipal: Principal = requests[idx];
             let userObj = userList.get(userPrincipal);
+            let polObj = policeList.get(userPrincipal);
+            let principalText = Principal.toText(userPrincipal);
             switch(userObj) {
-              case null {};
+              case null {
+                switch(polObj) {
+                  case null { Debug.print("User object is null"); };
+                  case (?pol) { 
+                    userPrincipalList.put(principalText, {category="police";name=pol.name});
+                  };
+                };
+              };
               case(?user) {
-                let principalText = Principal.toText(userPrincipal);
-                userPrincipalList := Array.append<(Text, User)>(userPrincipalList, [(principalText, user)])
+                userPrincipalList.put(principalText, {category = "complainant"; name = user.name});
+                Debug.print("Added user "#principalText#" to list");
               };
             };
           };
 
-          return userPrincipalList;
+          return Iter.toArray<(Text, FileRequestor)>(userPrincipalList.entries()); // length == 0, no data but user is owner , len >= 1, owner and data exist
         };
       };
     } else {
-      return dummyUsers;
+      return dummyUsers; // length == 1, not owner;
+    }
+  };
+  public query func getFileAccessRequestsToTest(cid: Text) : async [Text] {
+    let principals = userFileAccessRequests.get(cid);
+    switch(principals) {
+      case null {return []};
+      case (?p) {
+        return convertPrincipalsToText(p);
+      }
     }
   };
   /************** QUERY FUNCTIONS END ***********/
