@@ -173,7 +173,7 @@ actor {
           switch (oldPolice) {
             case (?oldP) {
               var oldPoliceComplaints = oldP.activeComplaints;
-              oldPoliceComplaints := Array.filter(oldPoliceComplaints, func(complaint : Nat) : Bool { complaint == complaintId });
+              oldPoliceComplaints := Array.filter(oldPoliceComplaints, func(complaint : Nat) : Bool { complaint != complaintId });
               var newPolice : Police = {
                 name = oldP.name;
                 designation = oldP.designation;
@@ -611,7 +611,6 @@ actor {
       };
     };
   };
-  // IN-PROGRESS - display file access requests does not work;returns no requests
   public query ({ caller }) func getFileAccessRequests(cid: Text) : async [(Text, FileRequestor)] {
     var dummyUsers: [(Text, FileRequestor)] = [("", {category="";name=""})];
     let isOwner = isFileOwner(caller, cid);
@@ -620,7 +619,7 @@ actor {
       switch(requestsForCID) {
         case(null) {
           Debug.print("No requests for file with cid "#cid);
-          return dummyUsers;
+          return [];
         };
         case(?requests) {
           var userPrincipalList: HashMap.HashMap<Text, FileRequestor> = HashMap.HashMap(32, Text.equal, Text.hash);
@@ -834,6 +833,36 @@ actor {
         return true;
       };
     };
+  };
+  public shared ({ caller }) func provideAccessToFile(principalText: Text, cid: Text, newKey: Text) : async Bool {
+    let principal = Principal.fromText(principalText);
+    
+    let isOwner:Bool = isFileOwner(caller, cid);
+    if(isOwner) {
+        var oldRequests = userFileAccessRequests.get(cid);
+        switch (oldRequests) {
+          case (?oldR) {
+            var oldRequestorPrincipals:[Principal] = oldR;
+            oldRequestorPrincipals := Array.filter(oldRequestorPrincipals, func(reqPrincipal : Principal) : Bool { reqPrincipal != principal });
+            userFileAccessRequests.put(cid, oldRequestorPrincipals);
+            let currKeys = userAESKeys.get(principal);
+            switch(currKeys) {
+              case null {
+                userAESKeys.put(principal, [ {cid=cid ; aesKey=newKey ; aesIV="";} ]);
+              };
+              case (?keys) {
+                var oldKeys:[UserCIDKey] = keys;
+                oldKeys := Array.append<UserCIDKey>(oldKeys, [ {cid=cid ; aesKey=newKey ; aesIV="";} ]);
+                userAESKeys.put(principal, oldKeys);
+              };
+            };
+            return true;
+          };
+          case (null) {return false;};
+        };
+    } else {
+      return false;
+    }
   };
   /************** UPDATE FUNCTIONS END ***********/
 };

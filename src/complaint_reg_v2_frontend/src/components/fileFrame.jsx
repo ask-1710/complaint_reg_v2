@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { create } from "ipfs-http-client";
-import Spinner from "react-bootstrap/Spinner";
+import { complaint_reg_v2_backend } from '../../../declarations/complaint_reg_v2_backend';
 
 var eccrypto = require("eccrypto");
 
@@ -20,9 +20,12 @@ const FileFrame = ({actor, createActor}) => {
     const [hasRequestedAccess, setHasRequestedAccess] = useState(false);
     const [isFileOwner, setIsFileOwner] = useState(false);
     const [fileRequests, setFileRequests] = useState([]);
+    const [aesKey, setAESKey] = useState("");
 
     const location = useLocation();
     const userType = location?.state?.userType;
+    const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
+    const polPrivKey = Buffer.from(localStorage.getItem(principal), "base64");
 
     const ipfs = create({
         url: "http://127.0.0.1:5002/",
@@ -38,28 +41,32 @@ const FileFrame = ({actor, createActor}) => {
             console.log("is police");
             const getRequests = await actor.getFileAccessRequests(cid);
             if(getRequests.length == 1 && getRequests[0][0]=="") {
+                console.log("not file owner");
                 setIsFileOwner(false);
+                await getAESKeyToViewFile();
                 return;
             }
             setIsFileOwner(true);
             console.log(getRequests);
             setFileRequests(getRequests);
+            await getAESKeyToViewFile();
         }
     };
 
-    const encryptFileByCID = async () => {
+    const getAESKeyToViewFile = async () => {
         console.log("retrieve keys");
         const keys = await actor.getEncAESKeyForDecryption(cid);
         console.log(keys);
-        if(keys.cid == "") {
+        if(keys.cid == "" || keys.aesKey == "") {
             setHasAccess(false);
-            const hasRequested = await actor.hasRequestedAccessForCID(cid); // TO BE IMPLEMENTED
+            const hasRequested = await actor.hasRequestedAccessForCID(cid);
             setHasRequestedAccess(hasRequested);
             console.log("no access to file");
         } else {
+            console.log("has access");
+            setHasAccess(true);
             const encKey = keys.aesKey;
             const iv = keys.iv;
-            const polPrivKey = Buffer.from(localStorage.getItem("policePrivKey"), "base64"); // only decryption
             const bufa = JSON.parse(encKey);
             let newObj = {};
             Object.keys(bufa).forEach(function(key) {
@@ -68,12 +75,16 @@ const FileFrame = ({actor, createActor}) => {
             const plaintext = await eccrypto.decrypt(polPrivKey, newObj);
             console.log(plaintext.toString('base64'));
             const actualAesKey = plaintext.toString('base64');
-            await decryptEvidence(actualAesKey, iv, cid);
+            setAESKey(actualAesKey);
         }
     };
 
+    async function displayFile() {
+        await decryptEvidence(aesKey, "", cid);
+    }
+
     async function decryptEvidence(aesKey, aesiv, fileCID) {
-        // TO BE IMPLEMENTED
+        
         const efile = ipfs.get(fileCID);
         var chunks = []
         for await (const chunk of efile) {
@@ -119,9 +130,25 @@ const FileFrame = ({actor, createActor}) => {
         setHasRequestedAccess(hasRequested);
     }
 
+    async function provideFileAccess(principal) {
+        var pubKeyOfRequestor = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principal);
+        console.log("pub key of user " + pubKeyOfRequestor.toString());
+
+        // encrypt AES Key with pubKeyOfUser
+        const bufPubKey = Buffer.from(pubKeyOfRequestor, "base64");
+        const aesSymmetricKey = Buffer.from(aesKey, "base64");
+        console.log(aesKey + " key given for access to user");
+        eccrypto.encrypt(bufPubKey, aesSymmetricKey).then(async function(encrypted) {
+          const encStringified = JSON.stringify(encrypted);
+          // store encrypted aes key
+          const result = await actor.provideAccessToFile(principal, cid, encStringified);
+          console.log(result);
+        });
+        
+    }
+
     return (
         <div className='container'>
-            <button className='button-27 mt-4' onClick={()=>{encryptFileByCID();}}>Click to view</button>
             {
                 hasAccess!=null && hasAccess==false && ( 
                     !hasRequestedAccess ? (
@@ -133,13 +160,16 @@ const FileFrame = ({actor, createActor}) => {
                         </>
                     ) : (
                         <>
-                            <div class="alert alert-info" role="alert">
+                            <div className="alert alert-info" role="alert">
                                 You have already requested access for this file
                             </div>
                         </>
                     )
                 )
             }    
+            {
+                hasAccess && <button className='button-27 mt-4' onClick={()=>{displayFile();}}>Click to view</button>
+            }
             {
                 isFileOwner && (
                     <div className='mt-4'>
@@ -155,9 +185,15 @@ const FileFrame = ({actor, createActor}) => {
                                     <div className='col'>
                                         <p>User category :{req[1].category} </p>
                                     </div>
+                                    <div className='col-2'>
+                                        <button onClick={()=>{provideFileAccess(req[0])}} className='button-27 small'>Provide access</button>
+                                    </div>
                                 </div>
                                 )
                             })
+                        }
+                        {
+                            fileRequests.length==0 && "No requests yet!"
                         }
                     </div>
                 ) 
