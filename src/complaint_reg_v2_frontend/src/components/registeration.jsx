@@ -32,7 +32,8 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
   const createPolice = async () => {
     console.log("Calling add police function");
     const privKey = eccrypto.generatePrivate();
-    localStorage.setItem("policePrivKey", privKey.toString("base64"));
+    const principalText = window.ic.plug.sessionManager.sessionData.principalId.toString();
+    localStorage.setItem(principalText, privKey.toString("base64"));
     const pubKey = eccrypto.getPublic(privKey);
     const createdPoliceResp = await actor.addPolice(
       policeInfo.name,
