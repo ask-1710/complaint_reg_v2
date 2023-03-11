@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Spinner from "react-bootstrap/Spinner";
 import { Badge } from "react-bootstrap";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { idlFactory } from "../../../declarations/complaint_reg_v2_backend";
 import { Card } from "../../../../node_modules/react-bootstrap/esm/index";
 import CardHeader from "../../../../node_modules/react-bootstrap/esm/CardHeader";
@@ -14,7 +14,8 @@ const UserDashboard = ({
   setIsNewUser,
   setIsSetupComplete,
 }) => {
-  const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
+  const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";  
+  const navigate = useNavigate();
   const [user, setUser] = useState({
     name: "",
     address: "",
@@ -108,9 +109,8 @@ const UserDashboard = ({
                   <div className="list-group">
                     {complaints.map((complaint) => {
                       return (
-                        <button
+                        <div
                           key={complaint[0]}
-                          href="#"
                           className="list-group-item my-2 list-group-item-action align-items-start"
                           data-toggle="list"
                         >
@@ -161,7 +161,8 @@ const UserDashboard = ({
                               )}
                             </li>
                           </ul>
-                        </button>
+                          <button className="button-27 small-button" onClick={()=>{navigate(`/complaintview/${complaint[0]}`, {state: {userType: "complainant"}})}}>View details</button>
+                        </div>
                       );
                     })}
                   </div>

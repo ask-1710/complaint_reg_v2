@@ -9,6 +9,8 @@ const ComplaintForm = ({createActor, actor}) => {
     location: "",
     date: new Date(),
   });
+  const [complaintCreated, setComplaintCreated] = useState(null);
+  const [errorWhileComplaint, setErrorWhileComplaint] = useState(false);
 
 
   async function submitComplaint() {
@@ -17,8 +19,11 @@ const ComplaintForm = ({createActor, actor}) => {
     const isCreated = await actor.addComplaint(newComplaint.title, newComplaint.summary, newComplaint.location, newComplaint.date.toString());
     if(isCreated) {
         console.log("Complaint Created");
+        setComplaintCreated(true);
     } else {
+        setComplaintCreated(false);
         console.log("Error while creating complaint");
+        setErrorWhileComplaint(true);
     }
     setNewComplaint("", "", "", newComplaint.date);
 
@@ -27,6 +32,8 @@ const ComplaintForm = ({createActor, actor}) => {
   return (
     <div className="container">
       <div className="mx-auto">
+        {complaintCreated && <p className="success-message">Complaint registered</p>}
+        {errorWhileComplaint && <p className="error-message">Complaint registeration failed</p>}
         <Card className="bg-light w-75 mx-auto">
             <div className="row my-2 mx-5">
               <h5>Fill in the details</h5>
