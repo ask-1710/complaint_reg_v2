@@ -21,6 +21,9 @@ const PoliceDashboard = ({
   const [updatedStatus, setUpdatedStatus] = useState("");
   const [addingEvidence, setAddingEvidence] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([])
+  const [addedEvidence, setAddedEvidence] = useState(false);
+  const [errorWhileAdding, setErrorWhileAdding] = useState(false);
+  const [isInvestigator, setIsInvestigator] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,6 +57,10 @@ const PoliceDashboard = ({
     if (actor != "") getUnassignedComplaints();
   }, [actor]);
 
+  useEffect(()=>{
+    checkIfInvestigator();
+  },[selectedComplaint]);
+
   async function getUnassignedComplaints() {
     var complaints = await complaint_reg_v2_backend.getUnassignedComplaints();
     console.log(complaints);
@@ -66,6 +73,9 @@ const PoliceDashboard = ({
     setSelectedComplaint(null);
     console.log("Updating complaint id "+complaintId+" with status "+updatedStatus);
     var result = await actor.updateComplaintStatus(complaintId, updatedStatus);
+    if(result==true) {
+      getUnassignedComplaints();
+    }
   }
 
   async function uploadEvidences(e) {
@@ -74,11 +84,6 @@ const PoliceDashboard = ({
   }
 
   async function saveEvidences(complaintId, _ev) {
-    // generate AES key & iv
-    // encrypt file with AES key
-    // save file in IPFS
-    // encrypt AES key with ECC key
-    // store { complaintId, fileCID, AESKey, AESiv } in ic
     const file = uploadedFiles[0]; // accepts only one file
     let fr = new FileReader();
     fr.onload = async function(e) {
@@ -88,22 +93,7 @@ const PoliceDashboard = ({
       const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key,{padding: CryptoJS.pad.NoPadding}); // added padding
       const result = await ipfs.add(encrypted.toString());
       console.log(result.path);
-      // const myPublicKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principalId);
-      // console.log("My public key : "+myPublicKey);
-      // const aesSymmetricKey = Buffer.from(key);
-      // const pubKey = eccryptoJS.utf8ToBuffer(myPublicKey);
-      // var encAESKey = await eccryptoJS.encrypt(pubKey, aesSymmetricKey);
-      // console.log(encAESKey.toString());
-      // eccrypto.encrypt(pubKey, aesSymmetricKey).then(function(encrypted) {
-      //   // B decrypting the message.
-      //   console.log(encrypted);
-      //   eccrypto.decrypt(privateKeyB, encrypted).then(function(plaintext) {
-      //     console.log("Message to part B:", plaintext.toString());
-      //   });
-      // });
       await encryptAESKeyAndSave(key,complaintId, result.path);
-
-      // await actor.addEvidence(complaintId, result.path, encAESKey, iv);
    }
     fr.readAsDataURL(file);
   }
@@ -118,8 +108,21 @@ const PoliceDashboard = ({
       // store encrypted aes key
       const result = await actor.addEvidence(complaintId, fileCID, encStringified, "");
       console.log(result);
+      setAddedEvidence(result);
+      setAddingEvidence(false);
+      if(!result) {
+        setErrorWhileAdding(true);
+      }
     });
     
+  }
+
+  async function checkIfInvestigator() {
+    console.log("Selected complaint "+selectedComplaint);
+    if(selectedComplaint!="" || selectedComplaint!=null) {
+      const isInvestigator = await actor.isInvestigatorForComplaint(selectedComplaint);
+      setIsInvestigator(isInvestigator);
+    }
   }
 
   return (
@@ -137,7 +140,7 @@ const PoliceDashboard = ({
             {complaints.map((complaint) => {
               return (
                 <>
-                  {selectedComplaint == complaint[0] ? (
+                  {selectedComplaint == complaint[0] && isInvestigator ? (
                     <div className="list-group-item my-2 list-group-item-action align-items-start">
                       <div className="flex d-flex flex-column p-2 m-4">
                         <div>
@@ -294,16 +297,22 @@ const PoliceDashboard = ({
                       </div>
                       <div>
                         {
+                          addedEvidence && <p className="success-message">File saved</p>
+                        }                        
+                        {
+                          errorWhileAdding && <p className="error-message">You do not have the permissions to add an evidence for this complaint!<br/> Please contact admin to assign this complaint to you</p>
+                        }
+                        {
                           addingEvidence?(
                             <>
-                            <p className="flex-box label-text">Upload one or more files</p>
+                            <p className="flex-box label-text">Only pdf accepted</p>
                             <input className="form-control" onChange={(ev)=>{uploadEvidences(ev)}} type="file" multiple accept="application/pdf , image/png, image/jpg, image/jpeg"></input>
                             {uploadedFiles.map(file=>{return <Badge text="dark" bg="warning">{file.name}</Badge>})}
                             <button className="button-27 small-right-bottom-button" onClick={(ev)=>{saveEvidences(complaint[0], ev)}}>Save</button>
-                            <button className="button-27 not-button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(false);}}>Cancel</button>
+                            <button className="button-27 not-button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(false);setErrorWhileAdding(false);setAddedEvidence(false);}}>Cancel</button>
                             </>
                           ):(
-                            <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);}}>Add evidence</button>
+                            <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);setAddedEvidence(false);errorWhileAdding(false);}}>Add evidence</button>
                           )
                         }
                         <button className="button-27 small-button" onClick={()=>{navigate(`/complaintview/${complaint[0]}`, {state: {userType: "police"}})}}>View details</button>
@@ -323,7 +332,23 @@ const PoliceDashboard = ({
 export default PoliceDashboard;
 
 /*
+WORKING BACKUP:
+
+      // const myPublicKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principalId);
+      // console.log("My public key : "+myPublicKey);
+      // const aesSymmetricKey = Buffer.from(key);
+      // const pubKey = eccryptoJS.utf8ToBuffer(myPublicKey);
+      // var encAESKey = await eccryptoJS.encrypt(pubKey, aesSymmetricKey);
+      // console.log(encAESKey.toString());
+      // eccrypto.encrypt(pubKey, aesSymmetricKey).then(function(encrypted) {
+      //   // B decrypting the message.
+      //   console.log(encrypted);
+      //   eccrypto.decrypt(privateKeyB, encrypted).then(function(plaintext) {
+      //     console.log("Message to part B:", plaintext.toString());
+      //   });
+      // });
 TRIED CODES:
+
 
 <iframe src="/uploads/media/default/0001/01/540cb75550adf33f281f29132dddd14fded85bfc.pdf#toolbar=0" width="100%" height="500px">
 

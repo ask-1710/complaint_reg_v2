@@ -21,6 +21,7 @@ const FileFrame = ({actor, createActor}) => {
     const [isFileOwner, setIsFileOwner] = useState(false);
     const [fileRequests, setFileRequests] = useState([]);
     const [aesKey, setAESKey] = useState("");
+    const [providingAccessStatus, setProvidingAccessStatus]=useState(null);
 
     const location = useLocation();
     const userType = location?.state?.userType;
@@ -105,22 +106,6 @@ const FileFrame = ({actor, createActor}) => {
         encodeURI(decryptedString) + 
         "#toolbar=0&navpanes=0' oncontextmenu='return false;'></iframe>");
 
-        // const url = "data:application/pdf;base64,"+encodeURI(decryptedString)+"#toolbar=0&navpanes=0";
-
-        // FIND  A WAY TO AVOID DOWNLOAD
-        // const r = await fetch(`data:application/pdf;base64,${encodeURI(decryptedString)}`);
-        // const blob = await r.blob();
-        // const url =  URL.createObjectURL(blob);
-        // window.open(url);
-        // console.log(url);
-        // Convert to array buffer, download pdf
-        // var bytes = [];
-        // while (decryptedString.length >= 8) { 
-        //     bytes.push(parseInt(decryptedString.substring(0, 8), 16));
-        //     decryptedString = decryptedString.substring(8, decryptedString.length);
-        // }
-        // const outFile = new Blob(bytes, {type: "application/pdf"});
-        // FileSaver.saveAs(outFile, "out.pdf");
     
     }
         
@@ -143,6 +128,12 @@ const FileFrame = ({actor, createActor}) => {
           // store encrypted aes key
           const result = await actor.provideAccessToFile(principal, cid, encStringified);
           console.log(result);
+          setProvidingAccessStatus(result);
+          if(result == true) {
+            // refetch requests
+            const getRequests = await actor.getFileAccessRequests(cid);
+            setFileRequests(getRequests);
+          }
         });
         
     }
@@ -173,8 +164,11 @@ const FileFrame = ({actor, createActor}) => {
             {
                 isFileOwner && (
                     <div className='mt-4'>
-                        <p>You are file owner!!</p>
-                        <p>Please find access requests for this file below</p>
+                        <p>You are the owner of this file</p>
+                        <p>Review requests to view this file below: </p>
+                        {
+                            providingAccessStatus && <p className='success-message'>Access has been granted!</p>
+                        }
                         {
                             fileRequests.length>0 && fileRequests.map(req => {
                                 return (
@@ -193,7 +187,7 @@ const FileFrame = ({actor, createActor}) => {
                             })
                         }
                         {
-                            fileRequests.length==0 && "No requests yet!"
+                            fileRequests.length==0 && <p className='text-muted'>No pending access requests</p>
                         }
                     </div>
                 ) 
@@ -204,3 +198,28 @@ const FileFrame = ({actor, createActor}) => {
 
 
 export default FileFrame;
+
+
+/*
+
+TRIED METHODS
+        // const url = "data:application/pdf;base64,"+encodeURI(decryptedString)+"#toolbar=0&navpanes=0";
+
+        // FIND  A WAY TO AVOID DOWNLOAD
+        // const r = await fetch(`data:application/pdf;base64,${encodeURI(decryptedString)}`);
+        // const blob = await r.blob();
+        // const url =  URL.createObjectURL(blob);
+        // window.open(url);
+        // console.log(url);
+        // Convert to array buffer, download pdf
+        // var bytes = [];
+        // while (decryptedString.length >= 8) { 
+        //     bytes.push(parseInt(decryptedString.substring(0, 8), 16));
+        //     decryptedString = decryptedString.substring(8, decryptedString.length);
+        // }
+        // const outFile = new Blob(bytes, {type: "application/pdf"});
+        // FileSaver.saveAs(outFile, "out.pdf");
+
+
+
+*/
