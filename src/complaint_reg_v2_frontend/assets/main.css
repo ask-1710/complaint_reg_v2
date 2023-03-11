@@ -159,6 +159,18 @@ body {
     width: fit-content;
   }
   
+  .success-message {
+    color: rgb(11, 162, 11);
+  }
+
+  .error-message {
+    color: rgb(196, 8, 8);
+  }
+
+  .text-muted {
+    font-weight: light;
+    color: rgb(48, 48, 48);
+  }
   /* The typing effect */
   @keyframes typing {
     from { width: 0 }
