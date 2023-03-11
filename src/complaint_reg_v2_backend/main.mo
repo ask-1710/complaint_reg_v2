@@ -661,6 +661,23 @@ actor {
       }
     }
   };
+  public query ({ caller }) func isInvestigatorForComplaint(complaintId: Nat) : async Bool {
+    var police = policeList.get(caller);
+    switch(police) {
+      case null { return false ;};
+      case (?pol) {
+        var assignedComplaints = pol.activeComplaints;
+        for(idx in Iter.range(0, assignedComplaints.size()-1)) {
+          var currComplaint = assignedComplaints[idx];
+          if(currComplaint == complaintId) {
+            return true;
+          }
+        };
+        return false;
+      };
+    };
+    return false;
+  };
   /************** QUERY FUNCTIONS END ***********/
 
   /************** UPDATE FUNCTIONS END ***********/
