@@ -4,11 +4,6 @@ import { create } from "ipfs-http-client";
 import { complaint_reg_v2_backend } from '../../../declarations/complaint_reg_v2_backend';
 
 var eccrypto = require("eccrypto");
-
-// var EC = require('elliptic').ec;
-// const FileSaver = require('file-saver');
-// const crypto = require("crypto");
-// import * as eccryptoJS from 'eccrypto-js';
 const CryptoJS = require("crypto-js")
 
 const FileFrame = ({actor, createActor}) => {
@@ -198,28 +193,3 @@ const FileFrame = ({actor, createActor}) => {
 
 
 export default FileFrame;
-
-
-/*
-
-TRIED METHODS
-        // const url = "data:application/pdf;base64,"+encodeURI(decryptedString)+"#toolbar=0&navpanes=0";
-
-        // FIND  A WAY TO AVOID DOWNLOAD
-        // const r = await fetch(`data:application/pdf;base64,${encodeURI(decryptedString)}`);
-        // const blob = await r.blob();
-        // const url =  URL.createObjectURL(blob);
-        // window.open(url);
-        // console.log(url);
-        // Convert to array buffer, download pdf
-        // var bytes = [];
-        // while (decryptedString.length >= 8) { 
-        //     bytes.push(parseInt(decryptedString.substring(0, 8), 16));
-        //     decryptedString = decryptedString.substring(8, decryptedString.length);
-        // }
-        // const outFile = new Blob(bytes, {type: "application/pdf"});
-        // FileSaver.saveAs(outFile, "out.pdf");
-
-
-
-*/

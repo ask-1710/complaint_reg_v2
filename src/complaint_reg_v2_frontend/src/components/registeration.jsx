@@ -119,46 +119,6 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                   }}
                 ></input>
               </div>
-              {/* <div className="row mt-2">
-                <div className="col-4">
-                    <p className="placeholder-text-color">Enter Role</p>
-                </div>
-                <div className="col-6">
-                <input
-                  type="radio"
-                  className="col-6"
-                  name="policeRole"
-                  onChange={(ev) => {
-                    if (ev.target.checked) {
-                      setPoliceInfo({ ...policeInfo, ["role"]: "creator" });
-                    }
-                  }}
-                />
-                Creator
-                <input
-                  type="radio"
-                  className="col-6"
-                  name="policeRole"
-                  onChange={(ev) => {
-                    if (ev.target.checked) {
-                      setPoliceInfo({ ...policeInfo, ["role"]: "owner" });
-                    }
-                  }}
-                />
-                Owner            
-                <input
-                  type="radio"
-                  name="policeRole"
-                  className="col-6"
-                  onChange={(ev) => {
-                    if (ev.target.checked) {
-                      setPoliceInfo({ ...policeInfo, ["role"]: "general" });
-                    }
-                  }}
-                />
-                General
-              </div>
-              </div> */}
               <div className="row mt-2 justify-content-center">
                 <input
                   type="type"
