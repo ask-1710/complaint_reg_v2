@@ -232,8 +232,6 @@ actor {
     };
     return true;
   };
-  
-
   private func textToStatusVariant(status: Text): StatusText {
     switch(status) {
       case ("firregisteration") {
@@ -382,7 +380,6 @@ actor {
       complaints = [0];
     };
   };
-
   private func getDummyPolice(): Police {
     return {
       name = "no-police";
