@@ -50,8 +50,8 @@ const FileFrame = ({actor, createActor}) => {
             setIsFileOwner(true);
             console.log(getRequests);
             setFileRequests(getRequests);
-            await getAESKeyToViewFile();
         }
+        await getAESKeyToViewFile();
     };
 
     const getAESKeyToViewFile = async () => {
