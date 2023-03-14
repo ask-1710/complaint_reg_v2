@@ -13,7 +13,7 @@ const FileFrame = ({actor, createActor}) => {
     const [decryptedString, setDecryptedString] = useState("");
     const [hasAccess, setHasAccess] = useState(null);
     const [hasRequestedAccess, setHasRequestedAccess] = useState(false);
-    const [isFileOwner, setIsFileOwner] = useState(false);
+    const [isFileOwner, setIsFileOwner] = useState(null);
     const [fileRequests, setFileRequests] = useState([]);
     const [aesKey, setAESKey] = useState("");
     const [providingAccessStatus, setProvidingAccessStatus]=useState(null);
@@ -21,7 +21,7 @@ const FileFrame = ({actor, createActor}) => {
     const location = useLocation();
     const userType = location?.state?.userType;
     const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
-    const polPrivKey = Buffer.from(localStorage.getItem(principal), "base64");
+    const myPrivKeyBuf = Buffer.from(localStorage.getItem(principal), "base64");
 
     const ipfs = create({
         url: "http://127.0.0.1:5002/",
@@ -32,7 +32,7 @@ const FileFrame = ({actor, createActor}) => {
         else startActivity();
     },[]);
 
-    const startActivity = async () => {
+    const getFileRequests = async () => {
         if(userType == "police") {
             console.log("is police");
             const getRequests = await actor.getFileAccessRequests(cid);
@@ -40,16 +40,26 @@ const FileFrame = ({actor, createActor}) => {
                 console.log("not file owner");
                 setIsFileOwner(false);
                 await getAESKeyToViewFile();
-                return;
+                return false;
             }
             setIsFileOwner(true);
+            console.log("isfile owner : "+isFileOwner);
             console.log(getRequests);
             setFileRequests(getRequests);
+            console.log("file requests got");
+            return true;
+        } else {
+            return false;
         }
-        await getAESKeyToViewFile();
+        
+    }
+
+    const startActivity = async () => {
+        const isOwner = await getFileRequests();
+        await getAESKeyToViewFile(isOwner);
     };
 
-    const getAESKeyToViewFile = async () => {
+    const getAESKeyToViewFile = async (isFileOwner) => {
         console.log("retrieve keys");
         const keys = await actor.getEncAESKeyForDecryption(cid);
         console.log(keys);
@@ -58,24 +68,47 @@ const FileFrame = ({actor, createActor}) => {
             const hasRequested = await actor.hasRequestedAccessForCID(cid);
             setHasRequestedAccess(hasRequested);
             console.log("no access to file");
-        } else {
+        } else { 
             console.log("has access");
-            setHasAccess(true);
-            const encKey = keys.aesKey;
-            const iv = keys.iv;
-            const bufa = JSON.parse(encKey);
-            let newObj = {};
-            Object.keys(bufa).forEach(function(key) {
-              newObj[key] = Buffer.from(bufa[key]['data']);
-            })
-            const plaintext = await eccrypto.decrypt(polPrivKey, newObj);
-            console.log(plaintext.toString('base64'));
-            const actualAesKey = plaintext.toString('base64');
-            setAESKey(actualAesKey);
+
+			if(isFileOwner) {  // owner -> get using assymetric encryption
+                console.log("file owner");
+				setHasAccess(true);
+				const encKey = keys.aesKey;
+				const iv = keys.iv;
+				const bufa = JSON.parse(encKey);
+				let newObj = {};
+				Object.keys(bufa).forEach(function(key) {
+				  newObj[key] = Buffer.from(bufa[key]['data']);
+				})
+				const plaintext = await eccrypto.decrypt(myPrivKeyBuf, newObj);
+				console.log(plaintext.toString('base64'));
+				const actualAesKey = plaintext.toString('base64');
+				setAESKey(actualAesKey);
+			} else { // derive shared key -> get aes key
+                setHasAccess(true);
+                console.log("not file owner");
+                const ownerPrincipal = await complaint_reg_v2_backend.getFileOwnerAsPrincipal(cid);
+				const ownerPubKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(ownerPrincipal); // TO BE IMPLEMENTED
+				// const ownerPubKey = "BKJ07gkq4hZWHSecimzkDFq5Dem9bqyJxAh3dyp1cvn1/Rjk/uiClQXa42lMCDweYgMyNyTxiFMRl349v+huErg=";
+                console.log(ownerPubKey);
+				const ownerPubKeyBuf = Buffer.from(ownerPubKey, "base64");
+				const encKey = keys.aesKey;
+				const iv = keys.iv;
+				console.log(encKey);
+				eccrypto.derive(myPrivKeyBuf, ownerPubKeyBuf).then(function(sharedKey) {
+					const toBuf = sharedKey.toString("base64");
+					const decrypted = CryptoJS.AES.decrypt(encKey, toBuf);
+					const decryptedString = CryptoJS.enc.Base64.stringify(decrypted);
+					console.log(decryptedString);
+                    setAESKey(decryptedString);
+				})
+			}
         }
     };
 
     async function displayFile() {
+        console.log("In decrypt function: "  + aesKey);
         await decryptEvidence(aesKey, "", cid);
     }
 
@@ -110,83 +143,74 @@ const FileFrame = ({actor, createActor}) => {
         setHasRequestedAccess(hasRequested);
     }
 
-    async function provideFileAccess(principal) {
-        var pubKeyOfRequestor = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principal);
-        console.log("pub key of user " + pubKeyOfRequestor.toString());
+    async function provideFileAccess(reqPrincipal) {
+        const reqPubKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(reqPrincipal);
+        const reqPubKeyBuf = Buffer.from(reqPubKey, "base64");
 
-        // encrypt AES Key with pubKeyOfUser
-        const bufPubKey = Buffer.from(pubKeyOfRequestor, "base64");
-        const aesSymmetricKey = Buffer.from(aesKey, "base64");
-        console.log(aesKey + " key given for access to user");
-        eccrypto.encrypt(bufPubKey, aesSymmetricKey).then(async function(encrypted) {
-          const encStringified = JSON.stringify(encrypted);
-          // store encrypted aes key
-          const result = await actor.provideAccessToFile(principal, cid, encStringified);
-          console.log(result);
-          setProvidingAccessStatus(result);
-          if(result == true) {
-            // refetch requests
-            const getRequests = await actor.getFileAccessRequests(cid);
-            setFileRequests(getRequests);
-          }
-        });
+		eccrypto.derive(myPrivKeyBuf, reqPubKeyBuf).then(async function(sharedKey) {
+			const sharedKeyBase64 = sharedKey.toString("base64");
+            localStorage.setItem("sharedKey", sharedKeyBase64);
+			console.log(sharedKeyBase64);
+			const symmetricKeyWordArray = CryptoJS.enc.Base64.parse(aesKey);
+			// console.log(symmetricKeyWordArray);
+			const encrypted = CryptoJS.AES.encrypt(symmetricKeyWordArray, sharedKeyBase64); // added padding// try removing padding and check
+			const encStringified = encrypted.toString();
+			console.log(encStringified);
+			
+            const result = await actor.provideAccessToFile(reqPrincipal, cid, encStringified);
+			console.log(result);
+			setProvidingAccessStatus(result);
+			if(result == true) {
+			// 	// refetch requests
+				const getRequests = await actor.getFileAccessRequests(cid);
+				setFileRequests(getRequests);
+			}
+		});
         
     }
 
     return (
         <div className='container'>
-            {
-                hasAccess!=null && hasAccess==false && ( 
-                    !hasRequestedAccess ? (
-                        <>
-                            <div className="alert alert-info mt-4" role="alert">
-                                You do not have access to view this file
-                            </div>
-                            <button className='button-27' onClick={()=>{requestAccessByCID()}}>Click to Request Access</button>
-                        </>
-                    ) : (
-                        <>
-                            <div className="alert alert-info" role="alert">
-                                You have already requested access for this file
-                            </div>
-                        </>
-                    )
+            {hasAccess!=null && hasAccess==false && ( 
+                !hasRequestedAccess ? (
+                    <>
+                        <div className="alert alert-info mt-4" role="alert">
+                            You do not have access to view this file
+                        </div>
+                        <button className='button-27' onClick={()=>{requestAccessByCID()}}>Click to Request Access</button>
+                    </>
+                ) : (
+                    <>
+                        <div className="alert alert-info mt-4" role="alert">
+                            You have already requested access for this file
+                        </div>
+                    </>
                 )
-            }    
-            {
-                hasAccess && <button className='button-27 mt-4' onClick={()=>{displayFile();}}>Click to view</button>
-            }
-            {
-                isFileOwner && (
-                    <div className='mt-4'>
-                        <p>You are the owner of this file</p>
-                        <p>Review requests to view this file below: </p>
-                        {
-                            providingAccessStatus && <p className='success-message'>Access has been granted!</p>
-                        }
-                        {
-                            fileRequests.length>0 && fileRequests.map(req => {
-                                return (
-                                <div key={req[0]} className='flex d-flex row'>
-                                    <div className='col'>
-                                        <p>Name : {req[1].name}</p>
-                                    </div>
-                                    <div className='col'>
-                                        <p>User category :{req[1].category} </p>
-                                    </div>
-                                    <div className='col-2'>
-                                        <button onClick={()=>{provideFileAccess(req[0])}} className='button-27 small'>Provide access</button>
-                                    </div>
-                                </div>
-                                )
-                            })
-                        }
-                        {
-                            fileRequests.length==0 && <p className='text-muted'>No pending access requests</p>
-                        }
-                    </div>
-                ) 
-            }
+            )}    
+            {hasAccess && <button className='button-27 mt-4' onClick={()=>{displayFile();}}>Click to view</button>}
+            {isFileOwner && (
+                <div className='mt-4'>
+                    <p>You are the owner of this file</p>
+                    <p>Review requests to view this file below: </p>
+                    {providingAccessStatus && <p className='success-message'>Access has been granted!</p>}
+                    {fileRequests.length>0 && fileRequests.map(req => {
+						return (
+						<div key={req[0]} className='flex d-flex row'>
+							<div className='col'>
+								<p>Name : {req[1].name}</p>
+							</div>
+							<div className='col'>
+								<p>User category :{req[1].category} </p>
+							</div>
+							<div className='col-3'>
+								<button onClick={()=>{provideFileAccess(req[0])}} className='button-27 small'>Provide access</button>
+							</div>
+						</div>
+						)
+					})}
+                    {fileRequests.length==0 && <p className='text-muted'>No pending access requests</p>}
+                </div>
+            )}
         </div>
     )
 }

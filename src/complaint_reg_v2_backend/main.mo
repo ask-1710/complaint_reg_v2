@@ -675,6 +675,18 @@ actor {
     };
     return false;
   };
+  public query ({ caller }) func getFileOwnerAsPrincipal(cid: Text): async Text {
+    var fileOwner = uploaderAESKeys.get(cid);
+    switch(fileOwner) {
+      case null {
+        return "";
+      };
+      case (?owner) {
+        var principal = owner.principal;
+        return Principal.toText(principal);
+      };
+    } 
+  };
   /************** QUERY FUNCTIONS END ***********/
 
   /************** UPDATE FUNCTIONS END ***********/
