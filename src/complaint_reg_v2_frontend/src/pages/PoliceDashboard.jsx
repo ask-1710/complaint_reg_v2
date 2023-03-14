@@ -24,6 +24,9 @@ const PoliceDashboard = ({
   const [addedEvidence, setAddedEvidence] = useState(false);
   const [errorWhileAdding, setErrorWhileAdding] = useState(false);
   const [isInvestigator, setIsInvestigator] = useState(false);
+  const [showSaveButton, setShowSaveButton] = useState(false);
+  const [originalStatus, setOriginalStatus] = useState("");
+
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -90,7 +93,7 @@ const PoliceDashboard = ({
       const binaryString = e.target.result;
       const parts = binaryString.split(";base64,")[1];
             
-      const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key,{padding: CryptoJS.pad.NoPadding}); // added padding
+      const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key);
       const result = await ipfs.add(encrypted.toString());
       console.log(result.path);
       await encryptAESKeyAndSave(key,complaintId, result.path);
@@ -119,11 +122,17 @@ const PoliceDashboard = ({
 
   async function checkIfInvestigator() {
     console.log("Selected complaint "+selectedComplaint);
-    if(selectedComplaint!="" || selectedComplaint!=null) {
+    if(selectedComplaint!=null) {
       const isInvestigator = await actor.isInvestigatorForComplaint(selectedComplaint);
       setIsInvestigator(isInvestigator);
     }
   }
+
+
+  async function showSave() {
+    setShowSaveButton(updatedStatus!=originalStatus);
+  }
+
 
   return (
     <div className="container">
@@ -186,6 +195,7 @@ const PoliceDashboard = ({
                             value={updatedStatus}
                             onChange={(ev) => {
                               setUpdatedStatus(ev.target.value);
+                              showSave();
                             }}
                           >
                             <option value="firregisteration">
@@ -213,7 +223,7 @@ const PoliceDashboard = ({
                                 Cancel
                               </button>
                             </div>
-                            <div className="m-6 p-6">
+                            {showSaveButton && <div className="m-6 p-6">
                               <button
                                 className="button-27"
                                 onClick={(ev) => {
@@ -223,9 +233,31 @@ const PoliceDashboard = ({
                                 Submit
                               </button>
                             </div>
+                            }
                           </div>
                         </div>
-                      </div>{" "}
+                      </div>
+                      <div>
+                        {
+                          addedEvidence && <p className="success-message">File saved</p>
+                        }                        
+                        {
+                          errorWhileAdding && <p className="error-message">You do not have the permissions to add an evidence for this complaint!<br/> Please contact admin to assign this complaint to you</p>
+                        }
+                        {
+                          addingEvidence?(
+                            <>
+                            <p className="flex-box label-text">Only pdf accepted</p>
+                            <input className="form-control" onChange={(ev)=>{uploadEvidences(ev)}} type="file" multiple accept="application/pdf , image/png, image/jpg, image/jpeg"></input>
+                            {uploadedFiles.map(file=>{return <Badge text="dark" bg="warning">{file.name}</Badge>})}
+                            <button className="button-27 small-right-bottom-button" onClick={(ev)=>{saveEvidences(complaint[0], ev)}}>Save</button>
+                            <button className="button-27 not-button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(false);setErrorWhileAdding(false);setAddedEvidence(false);}}>Cancel</button>
+                            </>
+                          ):(
+                            <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);setAddedEvidence(false);setErrorWhileAdding(false);}}>Add evidence</button>
+                          )
+                        }
+                      </div>
                     </div>
                   ) : (
                     <div className="list-group-item my-2 list-group-item-action align-items-start" data-toggle="list">
@@ -234,6 +266,7 @@ const PoliceDashboard = ({
                         onClick={(ev) => {
                           setSelectedComplaint(complaint[0]);
                           setUpdatedStatus(Object.keys(complaint[1].status)[0]);
+                          setOriginalStatus(Object.keys(complaint[1].status)[0])
                         }}
                       >
                         <ul className="complaint-list">
@@ -295,28 +328,7 @@ const PoliceDashboard = ({
                           </li>
                         </ul>                        
                       </div>
-                      <div>
-                        {
-                          addedEvidence && <p className="success-message">File saved</p>
-                        }                        
-                        {
-                          errorWhileAdding && <p className="error-message">You do not have the permissions to add an evidence for this complaint!<br/> Please contact admin to assign this complaint to you</p>
-                        }
-                        {
-                          addingEvidence?(
-                            <>
-                            <p className="flex-box label-text">Only pdf accepted</p>
-                            <input className="form-control" onChange={(ev)=>{uploadEvidences(ev)}} type="file" multiple accept="application/pdf , image/png, image/jpg, image/jpeg"></input>
-                            {uploadedFiles.map(file=>{return <Badge text="dark" bg="warning">{file.name}</Badge>})}
-                            <button className="button-27 small-right-bottom-button" onClick={(ev)=>{saveEvidences(complaint[0], ev)}}>Save</button>
-                            <button className="button-27 not-button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(false);setErrorWhileAdding(false);setAddedEvidence(false);}}>Cancel</button>
-                            </>
-                          ):(
-                            <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);setAddedEvidence(false);errorWhileAdding(false);}}>Add evidence</button>
-                          )
-                        }
-                        <button className="button-27 small-button" onClick={()=>{navigate(`/complaintview/${complaint[0]}`, {state: {userType: "police"}})}}>View details</button>
-                      </div>
+                      <button className="button-27 small-button" onClick={()=>{navigate(`/complaintview/${complaint[0]}`, {state: {userType: "police"}})}}>View details</button>
                     </div>
                   )}
                 </>
