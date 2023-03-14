@@ -22,7 +22,8 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
   const createUser = async () => {
     console.log("Calling add user function");
     const privKey = eccrypto.generatePrivate();
-    localStorage.setItem("userPrivKey", privKey.toString("base64"));
+    const principalText = window.ic.plug.sessionManager.sessionData.principalId.toString();
+    localStorage.setItem(principalText, privKey.toString("base64"));
     const pubKey = eccrypto.getPublic(privKey);
     const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public key
     console.log(createdUserResp);
