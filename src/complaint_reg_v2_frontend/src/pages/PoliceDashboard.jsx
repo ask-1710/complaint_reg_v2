@@ -183,7 +183,7 @@ const PoliceDashboard = ({
               return (
                 <>
                   {selectedComplaint == complaint[0] && isInvestigator ? (
-                    <div className="list-group-item my-2 list-group-item-action align-items-start">
+                    <div className="list-group-item my-2 list-group-item-action align-items-start" key={complaint[0]}>
                       <div className="flex d-flex flex-column p-2 m-4">
                         <div>
                           Short description:{" "}
@@ -346,7 +346,7 @@ const PoliceDashboard = ({
                       </div>
                     </div>                    
                   ) : (
-                    <div className="list-group-item my-2 list-group-item-action align-items-start" data-toggle="list">
+                    <div className="list-group-item my-2 list-group-item-action align-items-start" key={complaint[0]} data-toggle="list">
                       <div
                         key={complaint[0]}
                         onClick={(ev) => {
