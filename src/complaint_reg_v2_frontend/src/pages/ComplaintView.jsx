@@ -18,6 +18,14 @@ const ComplaintView = ({
   const location = useLocation();
   const userType = location?.state?.userType;
   const pathname = location.pathname;
+  const possibleStages = {
+    firregisteration: { step: 1, badgeText: "FIR registeration" },
+    investigation: { step: 2, badgeText: "Investigation on-progress" },
+    finalreportfiling: { step: 3, badgeText: "Filing final report" },
+    solved: { step: 4, badgeText: "Solved" },
+    unsolved: { step: 5, badgeText: "Unsolved" },
+  };
+
 
   useEffect(() => {
     setIsSetupComplete(true);
@@ -59,7 +67,9 @@ const ComplaintView = ({
               <p>Investigator: {complaintInfo.currentInchargeName}</p><br/>
               <p className="ml-4">{complaintInfo.currentInchargeDesig}</p><br/>
               <p>Police Station: {' '}{complaintInfo.assignedStation}</p><br/>
-              <p>Evidences <br/>
+              <p>Status : { possibleStages[Object.keys(complaintInfo.status)[0]].badgeText }</p><br />
+              <p><strong>Case documents :</strong></p><br/>
+              <p>Evidences </p>
               {
                   complaintInfo.evidence.length>1 && (
                     complaintInfo.evidence.map(evidence => {
@@ -69,17 +79,24 @@ const ComplaintView = ({
                       )
                     })
                   )
-                } </p>
+              }
               <br />
-              status not editable
+              {
+                complaintInfo.FIR!='NONE' && ( 
+                  <Link to={`${complaintInfo.FIR}`} state={{userType: userType}}>FIR</Link>
+                  )
+              }<br/>
+              {
+                complaintInfo.chargesheet!="NONE" && (
+                  <Link to={`${complaintInfo.chargesheet}`} state={{userType: userType}}>Chargesheet</Link>
+                )              
+              }
               <br />
-              Past inspectors who handled the case
-              <br />
-              if fir done , link to fir document
-              <br />
-              if chargesheet files, link to doc
-              <br />
-              if final report files, link to doc
+              {
+                complaintInfo.closureReport != "NONE" && (
+                  <Link to={`${complaintInfo.closureReport}`} state={{userType: userType}}>Closure Report</Link>
+                )
+              }
               <br />
             </>
           )}
