@@ -50,8 +50,8 @@ const FileFrame = ({actor, createActor}) => {
             setIsFileOwner(true);
             console.log(getRequests);
             setFileRequests(getRequests);
-            await getAESKeyToViewFile();
         }
+        await getAESKeyToViewFile();
     };
 
     const getAESKeyToViewFile = async () => {
@@ -153,7 +153,7 @@ const FileFrame = ({actor, createActor}) => {
                         </>
                     ) : (
                         <>
-                            <div className="alert alert-info" role="alert">
+                            <div className="alert alert-info mt-4" role="alert">
                                 You have already requested access for this file
                             </div>
                         </>
