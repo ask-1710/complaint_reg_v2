@@ -157,7 +157,7 @@ const PoliceDashboard = ({
 
   async function checkIfInvestigator() {
     console.log("Selected complaint "+selectedComplaint);
-    if(selectedComplaint!="" || selectedComplaint!=null) {
+    if(selectedComplaint!="" && selectedComplaint!=null) {
       const isInvestigator = await actor.isInvestigatorForComplaint(selectedComplaint);
       setIsInvestigator(isInvestigator);
     }
@@ -231,17 +231,29 @@ const PoliceDashboard = ({
                               showSave(ev.target.value);
                             }}
                           >
-                            <option value={Object.keys(possibleStages)[0]}>
-                              FIR registration ongoing
-                            </option>
-                            <option value={Object.keys(possibleStages)[1]}>
-                              Investigation ongoing
-                            </option>
-                            <option value={Object.keys(possibleStages)[2]}>
-                              Final Report filing
-                            </option>
-                            <option value={Object.keys(possibleStages)[3]}>Verdict passed</option>
-                            <option value={Object.keys(possibleStages)[4]}>Case abandoned</option>
+                          <option value={Object.keys(possibleStages)[0]}>
+                            FIR registration ongoing
+                          </option>
+                          {
+                            complaint[1].FIR!="NONE" && (
+                              <>
+                              <option value={Object.keys(possibleStages)[1]}>
+                                Investigation ongoing
+                              </option>
+                              <option value={Object.keys(possibleStages)[2]}>
+                                Final Report filing
+                              </option>
+                              {
+                                (complaint[1].chargesheet!='NONE' || complaint[1].closureReport!='NONE') && (
+                                  <>
+                                    <option value={Object.keys(possibleStages)[3]}>Verdict passed</option>
+                                    <option value={Object.keys(possibleStages)[4]}>Case abandoned</option>
+                                  </>
+                                )
+                              }
+                            </>
+                            )
+                          }
                           </select>
                         </div>
                         <div>
