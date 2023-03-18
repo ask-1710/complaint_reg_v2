@@ -60,6 +60,7 @@ const FileFrame = ({actor, createActor}) => {
     };
 
     const getAESKeyToViewFile = async (isFileOwner) => {
+        console.time('to-decrypt-AES-key');
         console.log("retrieve keys");
         const keys = await actor.getEncAESKeyForDecryption(cid);
         console.log(keys);
@@ -105,6 +106,7 @@ const FileFrame = ({actor, createActor}) => {
 				})
 			}
         }
+        console.timeEnd('to-decrypt-AES-key');
     };
 
     async function displayFile() {
