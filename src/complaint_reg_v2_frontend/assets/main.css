@@ -171,6 +171,15 @@ body {
     font-weight: light;
     color: rgb(48, 48, 48);
   }
+
+  .text-white {
+    color: wheat;
+  }
+
+  .file-link{
+    font-family: 'Courier New', Courier, monospace;
+  }
+
   /* The typing effect */
   @keyframes typing {
     from { width: 0 }

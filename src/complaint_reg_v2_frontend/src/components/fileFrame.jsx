@@ -21,7 +21,12 @@ const FileFrame = ({actor, createActor}) => {
     const location = useLocation();
     const userType = location?.state?.userType;
     const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
-    const myPrivKeyBuf = Buffer.from(localStorage.getItem(principal), "base64");
+    // const myPrivKeyBuf = Buffer.from(localStorage.getItem(principal), "base64");
+
+    const secret = "hagnrotu10394dd3";
+    const privKey = localStorage.getItem(principal).toString("base64");
+    const decPrivKey = CryptoJS.AES.decrypt(privKey, secret);
+    const myPrivKeyBuf = Buffer.from(CryptoJS.enc.Base64.stringify(decPrivKey), "base64");
 
     const ipfs = create({
         url: "http://127.0.0.1:5002/",

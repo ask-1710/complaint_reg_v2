@@ -40,10 +40,9 @@ const PoliceDashboard = ({
 
   const principalId = location?.state?.principalId;
   const isConnected = location?.state?.isConnected;
-  // const key = eccryptoJS.randomBytes(32);
-  // const iv = eccryptoJS.randomBytes(16); // store as [encKey, IV] in ic
-  const key = "secretsecretsecr"
-  const iv = "secretiv"
+
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
   const ipfs = create({
     url: "http://127.0.0.1:5002/",
   });
@@ -92,7 +91,12 @@ const PoliceDashboard = ({
     fr.onload = async function(e) {
       const binaryString = e.target.result;
       const parts = binaryString.split(";base64,")[1];
-            
+
+      var key = "";
+      for(var i=0;i<16;i++) {
+            key += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
+
       const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key);
       const result = await ipfs.add(encrypted.toString());
       console.log(result.path);
@@ -107,6 +111,11 @@ const PoliceDashboard = ({
     fr.onload = async function(e) {
       const binaryString = e.target.result;
       const parts = binaryString.split(";base64,")[1];
+
+      var key = "";
+      for(var i=0;i<16;i++) {
+            key += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
             
       const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key);
       const result = await ipfs.add(encrypted.toString());
@@ -123,7 +132,12 @@ const PoliceDashboard = ({
     fr.onload = async function(e) {
       const binaryString = e.target.result;
       const parts = binaryString.split(";base64,")[1];
-            
+
+      var key = "";
+      for(var i=0;i<16;i++) {
+            key += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
+      
       const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key);
       const result = await ipfs.add(encrypted.toString());
       console.log(result.path);
@@ -144,7 +158,7 @@ const PoliceDashboard = ({
       if(document=="FIR") result = await actor.addFIR(complaintId, fileCID, encStringified, "");
       else if(document == "chargesheet") result = await actor.addChargesheet(complaintId, fileCID, encStringified, "");
       else if(document == "closurereport") result = await actor.addClosureReport(complaintId, fileCID, encStringified, "");
-      else result = await actor.addEvidence(complaintId, fileCID, encStringified, "");
+      else result = await actor.addEvidence(complaintId, fileCID, encStringified, "");      
       console.log(result);
       setAddedEvidence(result);
       setAddingEvidence(false);
@@ -183,7 +197,7 @@ const PoliceDashboard = ({
               return (
                 <>
                   {selectedComplaint == complaint[0] && isInvestigator ? (
-                    <div className="list-group-item my-2 list-group-item-action align-items-start">
+                    <div className="list-group-item my-2 list-group-item-action align-items-start" key={complaint[0]}>
                       <div className="flex d-flex flex-column p-2 m-4">
                         <div>
                           Short description:{" "}
@@ -231,17 +245,29 @@ const PoliceDashboard = ({
                               showSave(ev.target.value);
                             }}
                           >
-                            <option value={Object.keys(possibleStages)[0]}>
-                              FIR registration ongoing
-                            </option>
-                            <option value={Object.keys(possibleStages)[1]}>
-                              Investigation ongoing
-                            </option>
-                            <option value={Object.keys(possibleStages)[2]}>
-                              Final Report filing
-                            </option>
-                            <option value={Object.keys(possibleStages)[3]}>Verdict passed</option>
-                            <option value={Object.keys(possibleStages)[4]}>Case abandoned</option>
+                          <option value={Object.keys(possibleStages)[0]}>
+                            FIR registration ongoing
+                          </option>
+                          {
+                            complaint[1].FIR!="NONE" && (
+                              <>
+                              <option value={Object.keys(possibleStages)[1]}>
+                                Investigation ongoing
+                              </option>
+                              <option value={Object.keys(possibleStages)[2]}>
+                                Final Report filing
+                              </option>
+                              {
+                                (complaint[1].chargesheet!='NONE' || complaint[1].closureReport!='NONE') && (
+                                  <>
+                                    <option value={Object.keys(possibleStages)[3]}>Verdict passed</option>
+                                    <option value={Object.keys(possibleStages)[4]}>Case abandoned</option>
+                                  </>
+                                )
+                              }
+                            </>
+                            )
+                          }
                           </select>
                         </div>
                         <div>
@@ -304,7 +330,7 @@ const PoliceDashboard = ({
                               <button className="button-27 not-button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(false);setErrorWhileAdding(false);setAddedEvidence(false);}}>Cancel</button>
                               </>
                             ):(
-                              <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);setAddedEvidence(false);errorWhileAdding(false);}}>Register FIR</button>
+                              <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);setAddedEvidence(false);setErrorWhileAdding(false);}}>Register FIR</button>
                             )
                           ) 
                         }
@@ -332,9 +358,9 @@ const PoliceDashboard = ({
                           )
                         }
                       </div>
-                    </div>
+                    </div>                    
                   ) : (
-                    <div className="list-group-item my-2 list-group-item-action align-items-start" data-toggle="list">
+                    <div className="list-group-item my-2 list-group-item-action align-items-start" key={complaint[0]} data-toggle="list">
                       <div
                         key={complaint[0]}
                         onClick={(ev) => {
