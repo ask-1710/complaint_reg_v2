@@ -83,7 +83,7 @@ const ComplaintView = ({
                       complaintInfo.evidence.map(evidence => {
                         return (
                           <div className="file-link">
-                            {evidence!="" && <Link to={`${evidence}`} state={{userType: userType}}>{evidence}</Link>}
+                            {evidence!="" && <Link to={`${evidence}`} state={{userType: userType}}>Evidence-{evidence.substr(1,5)}</Link>}
                           </div>
                         )
                       })
