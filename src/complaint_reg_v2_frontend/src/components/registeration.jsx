@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 // import * as eccryptoJS from 'eccrypto-js';
 var eccrypto = require("eccrypto");
+const CryptoJS = require("crypto-js")
+
 
 const Registeration = ({ actor, principalId , setIsNewUser }) => {
   const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "" });
@@ -18,13 +20,14 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
   const [isUser, setIsUser] = useState(false);
   const [hasRoleChosen, setHasRoleChosen] = useState(false);
   const navigate = useNavigate();
+  const secret = "hagnrotu10394dd3";
 
   const createUser = async () => {
     console.log("Calling add user function");
     const privKey = eccrypto.generatePrivate();
-    // localStorage.setItem("userPrivKey", privKey.toString("base64"));
     const principalText = window.ic.plug.sessionManager.sessionData.principalId.toString();
-    localStorage.setItem(principalText, privKey.toString("base64"));
+    const encPrivKey = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(privKey.toString("base64")), secret).toString(); // base64, encrypted key
+    localStorage.setItem(principalText, encPrivKey);
     const pubKey = eccrypto.getPublic(privKey);
     const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public key
     console.log(createdUserResp);
@@ -35,7 +38,8 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
     console.log("Calling add police function");
     const privKey = eccrypto.generatePrivate();
     const principalText = window.ic.plug.sessionManager.sessionData.principalId.toString();
-    localStorage.setItem(principalText, privKey.toString("base64"));
+    const encPrivKey = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(privKey.toString("base64")), secret).toString(); // base64, encrypted key
+    localStorage.setItem(principalText, encPrivKey);
     const pubKey = eccrypto.getPublic(privKey);
     const createdPoliceResp = await actor.addPolice(
       policeInfo.name,
