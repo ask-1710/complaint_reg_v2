@@ -26,6 +26,7 @@ const PoliceDashboard = ({
   const [errorWhileAdding, setErrorWhileAdding] = useState(false);
   const [isInvestigator, setIsInvestigator] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
+  const [isChargesheet, setIsChargesheet] = useState(true);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,7 +86,7 @@ const PoliceDashboard = ({
     setUploadedFiles(chosenFiles);
   }
 
-  async function saveEvidences(complaintId, _ev) {
+  async function saveEvidences(complaintId, _ev, document) {
     const file = uploadedFiles[0]; // accepts only one file
     let fr = new FileReader();
     fr.onload = async function(e) {
@@ -95,12 +96,43 @@ const PoliceDashboard = ({
       const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key);
       const result = await ipfs.add(encrypted.toString());
       console.log(result.path);
-      await encryptAESKeyAndSave(key,complaintId, result.path);
+      await encryptAESKeyAndSave(key, complaintId, result.path, document);
    }
     fr.readAsDataURL(file);
   }
 
-  async function encryptAESKeyAndSave(aesKey,complaintId, fileCID) {
+  async function saveFIR(complaintId, _ev, document) {
+    const file = uploadedFiles[0]; // accepts only one file
+    let fr = new FileReader();
+    fr.onload = async function(e) {
+      const binaryString = e.target.result;
+      const parts = binaryString.split(";base64,")[1];
+            
+      const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key);
+      const result = await ipfs.add(encrypted.toString());
+      console.log(result.path);
+      await encryptAESKeyAndSave(key, complaintId, result.path, document);
+   }
+    fr.readAsDataURL(file);
+  }
+
+  async function saveChargesheetOrClosureReport(complaintId, _ev, doc) {
+    var document = isChargesheet?"chargesheet":"closurereport";
+    const file = uploadedFiles[0]; // accepts only one file
+    let fr = new FileReader();
+    fr.onload = async function(e) {
+      const binaryString = e.target.result;
+      const parts = binaryString.split(";base64,")[1];
+            
+      const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key);
+      const result = await ipfs.add(encrypted.toString());
+      console.log(result.path);
+      await encryptAESKeyAndSave(key, complaintId, result.path, document);
+   }
+    fr.readAsDataURL(file);
+  }
+
+  async function encryptAESKeyAndSave(aesKey,complaintId, fileCID, document) {
     const principalId = window.ic.plug.sessionManager.sessionData.principalId;
     const pubKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principalId); // encryption with public key
     const polPubKey = Buffer.from(pubKey, "base64");
@@ -108,7 +140,11 @@ const PoliceDashboard = ({
     eccrypto.encrypt(polPubKey, aesSymmetricKey).then(async function(encrypted) {
       const encStringified = JSON.stringify(encrypted);
       // store encrypted aes key
-      const result = await actor.addEvidence(complaintId, fileCID, encStringified, "");
+      let result;
+      if(document=="FIR") result = await actor.addFIR(complaintId, fileCID, encStringified, "");
+      else if(document == "chargesheet") result = await actor.addChargesheet(complaintId, fileCID, encStringified, "");
+      else if(document == "closurereport") result = await actor.addClosureReport(complaintId, fileCID, encStringified, "");
+      else result = await actor.addEvidence(complaintId, fileCID, encStringified, "");      
       console.log(result);
       setAddedEvidence(result);
       setAddingEvidence(false);
@@ -127,8 +163,8 @@ const PoliceDashboard = ({
     }
   }
 
-  async function showSave() {
-    setShowSaveButton(updatedStatus!=originalStatus);
+  async function showSave(updated) {
+    setShowSaveButton(updated!=originalStatus);
   }
 
   return (
@@ -192,20 +228,20 @@ const PoliceDashboard = ({
                             value={updatedStatus}
                             onChange={(ev) => {
                               setUpdatedStatus(ev.target.value);
-                              showSave();
+                              showSave(ev.target.value);
                             }}
                           >
-                            <option value="firregisteration">
-                              FIR ongoing
+                            <option value={Object.keys(possibleStages)[0]}>
+                              FIR registration ongoing
                             </option>
-                            <option value="investigation">
+                            <option value={Object.keys(possibleStages)[1]}>
                               Investigation ongoing
                             </option>
-                            <option value="finalreportfiling">
+                            <option value={Object.keys(possibleStages)[2]}>
                               Final Report filing
                             </option>
-                            <option value="solved">Verdict passed</option>
-                            <option value="unsolved">Case abandoned</option>
+                            <option value={Object.keys(possibleStages)[3]}>Verdict passed</option>
+                            <option value={Object.keys(possibleStages)[4]}>Case abandoned</option>
                           </select>
                         </div>
                         <div>
@@ -240,19 +276,59 @@ const PoliceDashboard = ({
                           addedEvidence && <p className="success-message">File saved</p>
                         }                        
                         {
-                          errorWhileAdding && <p className="error-message">You do not have the permissions to add an evidence for this complaint!<br/> Please contact admin to assign this complaint to you</p>
+                          errorWhileAdding && <p className="error-message">You do not have the permissions to add a case document for this complaint!<br/> Please contact admin to assign this complaint to you</p>
                         }
                         {
-                          addingEvidence?(
-                            <>
-                            <p className="flex-box label-text">Only pdf accepted</p>
-                            <input className="form-control" onChange={(ev)=>{uploadEvidences(ev)}} type="file" multiple accept="application/pdf , image/png, image/jpg, image/jpeg"></input>
-                            {uploadedFiles.map(file=>{return <Badge text="dark" bg="warning">{file.name}</Badge>})}
-                            <button className="button-27 small-right-bottom-button" onClick={(ev)=>{saveEvidences(complaint[0], ev)}}>Save</button>
-                            <button className="button-27 not-button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(false);setErrorWhileAdding(false);setAddedEvidence(false);}}>Cancel</button>
-                            </>
-                          ):(
-                            <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);setAddedEvidence(false);errorWhileAdding(false);}}>Add evidence</button>
+                          originalStatus == Object.keys(possibleStages)[1] && (
+                            addingEvidence?(
+                              <>
+                              <p className="flex-box label-text">Only pdf accepted</p>
+                              <input className="form-control" onChange={(ev)=>{uploadEvidences(ev)}} type="file" multiple accept="application/pdf , image/png, image/jpg, image/jpeg"></input>
+                              {uploadedFiles.map(file=>{return <Badge text="dark" bg="warning">{file.name}</Badge>})}
+                              <button className="button-27 small-right-bottom-button" onClick={(ev)=>{saveEvidences(complaint[0], ev, "evidence")}}>Save</button>
+                              <button className="button-27 not-button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(false);setErrorWhileAdding(false);setAddedEvidence(false);}}>Cancel</button>
+                              </>
+                            ):(
+                              <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);setAddedEvidence(false);setErrorWhileAdding(false);}}>Add evidence</button>
+                            )
+                          )
+                        }
+                        {
+                          originalStatus == Object.keys(possibleStages)[0] && (
+                            addingEvidence?(
+                              <>
+                              <p className="flex-box label-text">Only pdf accepted</p>
+                              <input className="form-control" onChange={(ev)=>{uploadEvidences(ev)}} type="file" multiple accept="application/pdf"></input>
+                              {uploadedFiles.map(file=>{return <Badge  text="dark" bg="warning">{file.name}</Badge>})}
+                              <button className="button-27 small-right-bottom-button" onClick={(ev)=>{saveFIR(complaint[0], ev, "FIR")}}>Save</button>
+                              <button className="button-27 not-button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(false);setErrorWhileAdding(false);setAddedEvidence(false);}}>Cancel</button>
+                              </>
+                            ):(
+                              <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);setAddedEvidence(false);errorWhileAdding(false);}}>Register FIR</button>
+                            )
+                          ) 
+                        }
+                        {
+                          originalStatus == Object.keys(possibleStages)[2] && (
+                            addingEvidence?(
+                              <>
+                                <input
+                                  className="mx-2"
+                                  type="checkbox"
+                                  name="isChargesheet"
+                                  checked={isChargesheet}
+                                  onChange={()=>{setIsChargesheet(!isChargesheet)}}
+                                />
+                                You are uploading the {isChargesheet? "chargesheet":"closure report"}<br/>
+                                <p className="flex-box label-text">Only pdf accepted</p>
+                                <input className="form-control" onChange={(ev)=>{uploadEvidences(ev)}} type="file" multiple accept="application/pdf"></input>
+                                {uploadedFiles.map(file=>{return <Badge  text="dark" bg="warning">{file.name}</Badge>})}
+                                <button className="button-27 small-right-bottom-button" onClick={(ev)=>{saveChargesheetOrClosureReport(complaint[0], ev, "")}}>Save</button>
+                                <button className="button-27 not-button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(false);setErrorWhileAdding(false);setAddedEvidence(false);}}>Cancel</button>
+                              </>
+                            ):(
+                              <button className="button-27 small-right-bottom-button" onClick={(ev)=>{setAddingEvidence(true);setAddedEvidence(false);setErrorWhileAdding(false);}}>Upload Document</button>
+                            )
                           )
                         }
                       </div>
