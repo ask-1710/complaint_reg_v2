@@ -40,8 +40,9 @@ const PoliceDashboard = ({
 
   const principalId = location?.state?.principalId;
   const isConnected = location?.state?.isConnected;
- const key = "secretsecretsecr"
-  const iv = "secretiv"
+
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
   const ipfs = create({
     url: "http://127.0.0.1:5002/",
   });
@@ -90,7 +91,12 @@ const PoliceDashboard = ({
     fr.onload = async function(e) {
       const binaryString = e.target.result;
       const parts = binaryString.split(";base64,")[1];
-            
+
+      var key = "";
+      for(var i=0;i<16;i++) {
+            key += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
+
       const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key);
       const result = await ipfs.add(encrypted.toString());
       console.log(result.path);
@@ -105,6 +111,11 @@ const PoliceDashboard = ({
     fr.onload = async function(e) {
       const binaryString = e.target.result;
       const parts = binaryString.split(";base64,")[1];
+
+      var key = "";
+      for(var i=0;i<16;i++) {
+            key += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
             
       const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key);
       const result = await ipfs.add(encrypted.toString());
@@ -121,7 +132,12 @@ const PoliceDashboard = ({
     fr.onload = async function(e) {
       const binaryString = e.target.result;
       const parts = binaryString.split(";base64,")[1];
-            
+
+      var key = "";
+      for(var i=0;i<16;i++) {
+            key += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
+      
       const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(parts), key);
       const result = await ipfs.add(encrypted.toString());
       console.log(result.path);
