@@ -380,6 +380,7 @@ actor {
       complaints = [0];
     };
   };
+
   private func getDummyPolice(): Police {
     return {
       name = "no-police";
@@ -890,6 +891,169 @@ actor {
       return false;
     }
   };
+  public shared ({ caller }) func addFIR(complaintId: Nat, fileCID: Text, encAESKey: Text, AESiv: Text): async Bool {
+    var complaintObj = complaintList.get(complaintId);
+    switch(complaintObj) {
+      case(null) { return false; };
+      case(?oldComplaint) { 
+        try {
+          var newComplaint: Complaint = {
+            title = oldComplaint.title;
+            summary = oldComplaint.summary;
+            date = oldComplaint.date;
+            location = oldComplaint.location ;
+            typee = oldComplaint.typee ;
+            evidence = oldComplaint.evidence; // CIDs
+            status = oldComplaint.status;
+            FIR = fileCID ;// CID - step1
+            chargesheet = oldComplaint.chargesheet; // CID
+            closureReport = oldComplaint.closureReport // CID
+          };
+          complaintList.put(complaintId, newComplaint);
+          // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
+          var uploadersKeys = uploaderAESKeys.put(fileCID, {
+            principal = caller;
+            aesKey = encAESKey;
+            aesIV = AESiv;
+          });
+
+          var userKeys  = userAESKeys.get(caller);
+          switch(userKeys) {
+            case null {
+              userAESKeys.put(caller, [{
+                cid = fileCID;
+                aesKey = encAESKey;
+                aesIV = AESiv;
+              }]);
+            };
+            case(?oldKeys) {
+                var newKeys = Array.append<UserCIDKey>(oldKeys, [{
+                  cid = fileCID;
+                  aesKey = encAESKey;
+                  aesIV = AESiv;
+                }]);
+                userAESKeys.put(caller, newKeys);
+            }; 
+          };
+          return true;
+        } catch(err) {
+          Debug.print("Error occured while saving FIR for complaint " # Nat.toText(complaintId));
+          return false;
+        }
+      };
+    };
+    return false;
+  };
+  public shared ({ caller }) func addChargesheet(complaintId: Nat, fileCID: Text, encAESKey: Text, AESiv: Text): async Bool {
+    var complaintObj = complaintList.get(complaintId);
+    switch(complaintObj) {
+      case(null) { return false; };
+      case(?oldComplaint) { 
+        try {
+          var newComplaint: Complaint = {
+            title = oldComplaint.title;
+            summary = oldComplaint.summary;
+            date = oldComplaint.date;
+            location = oldComplaint.location ;
+            typee = oldComplaint.typee ;
+            evidence = oldComplaint.evidence; // CIDs
+            status = oldComplaint.status;
+            FIR = oldComplaint.FIR ;// CID - step1
+            chargesheet = fileCID; // CID
+            closureReport = oldComplaint.closureReport // CID
+          };
+          complaintList.put(complaintId, newComplaint);
+          // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
+          var uploadersKeys = uploaderAESKeys.put(fileCID, {
+            principal = caller;
+            aesKey = encAESKey;
+            aesIV = AESiv;
+          });
+
+          var userKeys  = userAESKeys.get(caller);
+          switch(userKeys) {
+            case null {
+              userAESKeys.put(caller, [{
+                cid = fileCID;
+                aesKey = encAESKey;
+                aesIV = AESiv;
+              }]);
+            };
+            case(?oldKeys) {
+                var newKeys = Array.append<UserCIDKey>(oldKeys, [{
+                  cid = fileCID;
+                  aesKey = encAESKey;
+                  aesIV = AESiv;
+                }]);
+                userAESKeys.put(caller, newKeys);
+            }; 
+          };
+          return true;
+        } catch(err) {
+          Debug.print("Error occured while saving chargesheet for complaint " # Nat.toText(complaintId));
+          return false;
+        }
+      };
+    };
+    return false;
+  };
+  public shared ({ caller }) func addClosureReport(complaintId: Nat, fileCID: Text, encAESKey: Text, AESiv: Text): async Bool {
+    var complaintObj = complaintList.get(complaintId);
+    switch(complaintObj) {
+      case(null) { return false; };
+      case(?oldComplaint) { 
+        try {
+          var newComplaint: Complaint = {
+            title = oldComplaint.title;
+            summary = oldComplaint.summary;
+            date = oldComplaint.date;
+            location = oldComplaint.location ;
+            typee = oldComplaint.typee ;
+            evidence = oldComplaint.evidence; // CIDs
+            status = oldComplaint.status;
+            FIR = oldComplaint.FIR ;// CID - step1
+            chargesheet = oldComplaint.chargesheet; // CID
+            closureReport = fileCID // CID
+          };
+          complaintList.put(complaintId, newComplaint);
+          // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
+          var uploadersKeys = uploaderAESKeys.put(fileCID, {
+            principal = caller;
+            aesKey = encAESKey;
+            aesIV = AESiv;
+          });
+
+          var userKeys  = userAESKeys.get(caller);
+          switch(userKeys) {
+            case null {
+              userAESKeys.put(caller, [{
+                cid = fileCID;
+                aesKey = encAESKey;
+                aesIV = AESiv;
+              }]);
+            };
+            case(?oldKeys) {
+                var newKeys = Array.append<UserCIDKey>(oldKeys, [{
+                  cid = fileCID;
+                  aesKey = encAESKey;
+                  aesIV = AESiv;
+                }]);
+                userAESKeys.put(caller, newKeys);
+            }; 
+          };
+          return true;
+        } catch(err) {
+          Debug.print("Error occured while saving closure report for complaint " # Nat.toText(complaintId));
+          return false;
+        }
+      };
+    };
+    return false;
+  };
+
+
+
+
   /************** UPDATE FUNCTIONS END ***********/
 };
 
