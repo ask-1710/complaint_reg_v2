@@ -72,41 +72,46 @@ const ComplaintView = ({
                     <p><strong>Incharge Details</strong></p>
                     <p><strong>Investigator: </strong>{complaintInfo.currentInchargeName +" , " +complaintInfo.currentInchargeDesig}</p>
                     <p><strong>Police Station:</strong> E5 - Police Station in R.A. Puram, Chennai-600028 </p><br/>
-                  </>
-                ) : <>No investigator assigned yet</>
-              }
-              <p><strong>Status : </strong>{ possibleStages[Object.keys(complaintInfo.status)[0]].badgeText }</p><br />
-              <p><strong>All related case documents </strong></p>
-                <p><strong>Evidences </strong></p>
-                {
-                    complaintInfo.evidence.length>1 && (
-                      complaintInfo.evidence.map(evidence => {
-                        return (
-                          <div className="file-link">
-                            {evidence!="" && <Link to={`${evidence}`} state={{userType: userType}}>Evidence-{evidence.substr(1,5)}</Link>}
-                          </div>
+                    <p className="my-2"><strong>Status : </strong>{ possibleStages[Object.keys(complaintInfo.status)[0]].badgeText }</p><br />
+                    <p><strong>All related case documents </strong></p>
+                      <p><strong>Evidences </strong></p>
+                      {
+                          complaintInfo.evidence.length>1 && (
+                            complaintInfo.evidence.map(evidence => {
+                              return (
+                                <div className="file-link">
+                                  {evidence!="" && <Link to={`${evidence}`} state={{userType: userType}}>Evidence-{evidence.substr(1,5)}</Link>}
+                                </div>
+                              )
+                            })
+                          )
+                      }
+                      <br />
+                      {
+                        complaintInfo.FIR!='NONE' && ( 
+                          <Link to={`${complaintInfo.FIR}`} state={{userType: userType}}>FIR</Link>
+                          )
+                      }<br/>
+                      {
+                        complaintInfo.chargesheet!="NONE" && (
+                          <Link to={`${complaintInfo.chargesheet}`} state={{userType: userType}}>Chargesheet</Link>
+                        )              
+                      }
+                      <br />
+                      {
+                        complaintInfo.closureReport != "NONE" && (
+                          <Link to={`${complaintInfo.closureReport}`} state={{userType: userType}}>Closure Report</Link>
                         )
-                      })
-                    )
-                }
-                <br />
-                {
-                  complaintInfo.FIR!='NONE' && ( 
-                    <Link to={`${complaintInfo.FIR}`} state={{userType: userType}}>FIR</Link>
-                    )
-                }<br/>
-                {
-                  complaintInfo.chargesheet!="NONE" && (
-                    <Link to={`${complaintInfo.chargesheet}`} state={{userType: userType}}>Chargesheet</Link>
-                  )              
-                }
-                <br />
-                {
-                  complaintInfo.closureReport != "NONE" && (
-                    <Link to={`${complaintInfo.closureReport}`} state={{userType: userType}}>Closure Report</Link>
-                  )
-                }
-              </div>
+                      }
+                  
+                  </>
+                ) : (
+                <>
+                  <p>No investigator assigned yet</p>
+                  <p className="my-2"><strong>Status : </strong>Complaint registered, No investigator assigned this complaint</p><br />
+                </>
+                )
+              }  </div>
               </div>
             </>
           )}

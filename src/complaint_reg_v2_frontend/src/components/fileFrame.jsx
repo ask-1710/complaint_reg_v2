@@ -179,18 +179,21 @@ const FileFrame = ({actor, createActor}) => {
                         {
                             fileRequests.length>0 && fileRequests.map(req => {
                                 return (
-                                <div key={req[0]} className='flex d-flex row'>
-                                    <div className='col'>
-                                        <p>Name : {req[1].name}</p>
+                                    <div key={req[0]} className='flex d-flex row'>
+                                        <div className='col'>
+                                            <p>Id: {req[0].substr(0,5)}******</p>
+                                        </div>
+                                        <div className='col'>
+                                            <p>Name : {req[1].name}</p>
+                                        </div>
+                                        <div className='col'>
+                                            <p>Category :{req[1].category} </p>
+                                        </div>
+                                        <div className='col-3'>
+                                            <button onClick={()=>{provideFileAccess(req[0])}} className='button-27 small'>Provide access</button>
+                                        </div>
                                     </div>
-                                    <div className='col'>
-                                        <p>User category :{req[1].category} </p>
-                                    </div>
-                                    <div className='col-2'>
-                                        <button onClick={()=>{provideFileAccess(req[0])}} className='button-27 small'>Provide access</button>
-                                    </div>
-                                </div>
-                                )
+                                    )
                             })
                         }
                         {
