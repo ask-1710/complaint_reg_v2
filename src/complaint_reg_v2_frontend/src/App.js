@@ -9,7 +9,8 @@ import { complaint_reg_v2_backend } from "../../declarations/complaint_reg_v2_ba
 import { idlFactory } from "../../declarations/complaint_reg_v2_backend";
 import ComplaintView from "./pages/ComplaintView";
 import FileFrame from "./components/fileFrame";
-
+const CANISTER_ID = process.env.COMPLAINT_REG_V2_BACKEND_CANISTER_ID;
+const prin = complaint_reg_v2_backend.principalId;
 const App = function () {
   const [actor, setActor] = useState("");
   const [isConnected, setIsConnected] = useState(false);
@@ -19,7 +20,7 @@ const App = function () {
   const [isNewUser, setIsNewUser] = useState([true, ""]);
   const navigate = useNavigate();
 
-  const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
+  const nnsCanisterId = CANISTER_ID;
   const whitelist = [nnsCanisterId];
   const host = "http://127.0.0.1:4943";
   const pathname = useLocation().pathname;

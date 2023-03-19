@@ -95,8 +95,7 @@ const FileFrame = ({actor, createActor}) => {
                 setHasAccess(true);
                 console.log("not file owner");
                 const ownerPrincipal = await complaint_reg_v2_backend.getFileOwnerAsPrincipal(cid);
-				const ownerPubKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(ownerPrincipal); // TO BE IMPLEMENTED
-				// const ownerPubKey = "BKJ07gkq4hZWHSecimzkDFq5Dem9bqyJxAh3dyp1cvn1/Rjk/uiClQXa42lMCDweYgMyNyTxiFMRl349v+huErg=";
+				const ownerPubKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(ownerPrincipal);
                 console.log(ownerPubKey);
 				const ownerPubKeyBuf = Buffer.from(ownerPubKey, "base64");
 				const encKey = keys.aesKey;
@@ -203,11 +202,14 @@ const FileFrame = ({actor, createActor}) => {
                     {fileRequests.length>0 && fileRequests.map(req => {
 						return (
 						<div key={req[0]} className='flex d-flex row'>
+                            <div className='col'>
+                                <p>Id: {req[0].substr(0,5)}******</p>
+                            </div>
 							<div className='col'>
 								<p>Name : {req[1].name}</p>
 							</div>
 							<div className='col'>
-								<p>User category :{req[1].category} </p>
+								<p>Category :{req[1].category} </p>
 							</div>
 							<div className='col-3'>
 								<button onClick={()=>{provideFileAccess(req[0])}} className='button-27 small'>Provide access</button>
