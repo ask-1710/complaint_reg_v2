@@ -63,9 +63,14 @@ const ComplaintView = ({
             </div>
               <hr className="my-4"/>
               <div className="p-1 m-1">
-              <div className="card bg-dark text-white file-link">
+              <div className="file-link">
               <h2>{complaintInfo.title}</h2>
-              <p>{complaintInfo.summary}</p>
+              <p><strong>Complaint Number :</strong> {complaintId}</p>
+              <p><strong>Complainant Name:</strong> {complaintInfo.complainantName}</p>
+              <p><strong>Complainant Address:</strong> {complaintInfo.complainantAddress}</p>
+              <p><strong>Area of occurence:</strong> {complaintInfo.location}</p>
+              <p><strong>Date of Occurence:</strong> {complaintInfo.date}</p>
+              <p><strong>Elaborated description</strong><br/>{complaintInfo.summary}</p>
               {
                 complaintInfo.currentInchargeName != "no-police" ? (
                   <>
@@ -107,7 +112,6 @@ const ComplaintView = ({
                   </>
                 ) : (
                 <>
-                  <p>No investigator assigned yet</p>
                   <p className="my-2"><strong>Status : </strong>Complaint registered, No investigator assigned this complaint</p><br />
                 </>
                 )

@@ -16,3 +16,9 @@ src/declarations/
 # frontend code
 node_modules/
 dist/
+
+TODO*
+
+hybrid-encryption-flow.png
+
+package-lock.json
