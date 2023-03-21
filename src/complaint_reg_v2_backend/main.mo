@@ -11,6 +11,7 @@ import Nat "mo:base/Nat";
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
+import Time "mo:base/Time";
 
 
 actor {
@@ -35,6 +36,7 @@ actor {
     chargesheet : Text; // CID
     closureReport : Text; // CID
     complainantPrincipal: Principal;
+    updatedOn: Time.Time;
   };
 
   public type Role = {
@@ -86,6 +88,7 @@ actor {
     assignedStationCode: Text;
     ownershipHistory: [Police]; 
     complainantName: Text;
+    updatedOn: Time.Time;
     complainantAddress: Text;  
   };
 
@@ -438,6 +441,7 @@ actor {
       ownershipHistory = [getDummyPolice()];
       complainantName = "";
       complainantAddress = "";
+      updatedOn = Time.now();
     };
   };
   private func convertPrincipalsToText(principals: [Principal]): [Text] {
@@ -515,6 +519,7 @@ actor {
       chargesheet = "NONE";
       closureReport = "NONE";
       complainantPrincipal = caller;
+      updatedOn=Time.now();
     };
     let dummyComplaintId: Nat = 0;
     switch (userObj) {
@@ -596,6 +601,7 @@ actor {
           title = info.title;
           complainantName = complainantName;
           complainantAddress = complainantAddress;
+          updatedOn = info.updatedOn;
         };    
         return complaintView;    
       };
@@ -740,6 +746,7 @@ actor {
       case (null) { finalResult := false };
       case (?obj) {
         var oldComplaints : [Nat] = obj.complaints;
+        var currTime = Time.now();
         numComplaints := numComplaints +1;
         complaintList.put(
           numComplaints,
@@ -755,6 +762,7 @@ actor {
             chargesheet = "NONE";
             closureReport = "NONE";
             complainantPrincipal = caller;
+            updatedOn = Time.now();
           },
         );
         oldComplaints := Array.append(oldComplaints, [numComplaints]);
@@ -801,6 +809,7 @@ actor {
             status = textToStatusVariant(status);
             typee = "cognizable";
             complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
           };
           complaintList.put(complaintId, newComplaint);
           return true;
@@ -832,6 +841,7 @@ actor {
             chargesheet = oldComplaint.chargesheet; // CID
             closureReport = oldComplaint.closureReport; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -930,6 +940,7 @@ actor {
             chargesheet = oldComplaint.chargesheet; // CID
             closureReport = oldComplaint.closureReport; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -984,6 +995,7 @@ actor {
             chargesheet = fileCID; // CID
             closureReport = oldComplaint.closureReport; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -1038,6 +1050,7 @@ actor {
             chargesheet = oldComplaint.chargesheet; // CID
             closureReport = fileCID; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
