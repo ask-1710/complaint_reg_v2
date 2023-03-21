@@ -41,6 +41,7 @@ const ComplaintView = ({
   const getDetailedComplaintInfo = async () => {
     console.log("Inside getDetailedComplaintInfo");
     var complaintInfo = await actor.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
+    console.log(complaintInfo);
     setComplaintInfo(complaintInfo);
     setIsLoading(false);
     console.log(complaintInfo);
@@ -71,6 +72,7 @@ const ComplaintView = ({
               <p><strong>Area of occurence:</strong> {complaintInfo.location}</p>
               <p><strong>Date of Occurence:</strong> {complaintInfo.date}</p>
               <p><strong>Elaborated description</strong><br/>{complaintInfo.summary}</p>
+              <p><strong>Last updated on: </strong>{new Date(Number(complaintInfo.updatedOn)/1000000).toString()}</p>
               {
                 complaintInfo.currentInchargeName != "no-police" ? (
                   <>
