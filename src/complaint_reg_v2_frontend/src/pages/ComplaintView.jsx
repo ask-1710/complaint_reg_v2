@@ -14,6 +14,7 @@ const ComplaintView = ({
   //   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true);
   const [complaintInfo, setComplaintInfo] = useState(null);
+  const [registeredDaysBefore, setRegisteredDaysBefore] = useState(null);
   const { complaintId } = useParams();
   const location = useLocation();
   const userType = location?.state?.userType;
@@ -42,6 +43,11 @@ const ComplaintView = ({
     console.log("Inside getDetailedComplaintInfo");
     var complaintInfo = await actor.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
     setComplaintInfo(complaintInfo);
+    var toDate = new Date(complaintInfo.date);
+    var today = new Date();
+    var differenceInDays = Math.ceil((today.getTime() - toDate.getTime())/ (1000 * 60 * 60 * 24));
+    console.log(differenceInDays);
+    setRegisteredDaysBefore(differenceInDays.toString());
     setIsLoading(false);
     console.log(complaintInfo);
   };
@@ -71,6 +77,7 @@ const ComplaintView = ({
               <p><strong>Area of occurence:</strong> {complaintInfo.location}</p>
               <p><strong>Date of Occurence:</strong> {complaintInfo.date}</p>
               <p><strong>Elaborated description</strong><br/>{complaintInfo.summary}</p>
+              <p>Complaint registered <strong>{registeredDaysBefore + ' '} days</strong> before</p>
               {
                 complaintInfo.currentInchargeName != "no-police" ? (
                   <>
