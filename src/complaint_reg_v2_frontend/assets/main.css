@@ -9,7 +9,7 @@ body {
   .body-container{
     width: 100vw;
     height: 100vh;  
-    background-image: radial-gradient(rgb(99, 240, 233), rgb(253, 253, 8));
+    background-image: rgb(149, 214, 222);
     overflow: scroll;
   }
 
@@ -27,7 +27,7 @@ body {
   }
   
   .registration-card{
-    background-image: radial-gradient(rgba(180, 238, 235, 0.8));
+    background-image: rgb(149, 214, 222);
     margin: auto;
     color: black;
     text-align: left;

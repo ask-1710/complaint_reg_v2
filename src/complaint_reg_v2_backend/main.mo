@@ -11,6 +11,7 @@ import Nat "mo:base/Nat";
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
+import Time "mo:base/Time";
 
 
 actor {
@@ -34,6 +35,8 @@ actor {
     FIR : Text; // CID - step1
     chargesheet : Text; // CID
     closureReport : Text; // CID
+    complainantPrincipal: Principal;
+    updatedOn: Time.Time;
   };
 
   public type Role = {
@@ -83,7 +86,10 @@ actor {
     currentInchargeDesig: Text;
     assignedStation: Text;
     assignedStationCode: Text;
-    ownershipHistory: [Police];   
+    ownershipHistory: [Police]; 
+    complainantName: Text;
+    updatedOn: Time.Time;
+    complainantAddress: Text;  
   };
 
   type FileRequestor = {
@@ -435,6 +441,9 @@ actor {
       assignedStation = "";
       assignedStationCode = "";
       ownershipHistory = [getDummyPolice()];
+      complainantName = "";
+      complainantAddress = "";
+      updatedOn = Time.now();
     };
   };
   private func convertPrincipalsToText(principals: [Principal]): [Text] {
@@ -500,7 +509,7 @@ actor {
   public query ({ caller }) func getUserComplaints() : async [(Nat, Complaint)] {
     let userComplaints : HashMap.HashMap<Nat, Complaint> = HashMap.HashMap(32, Nat.equal, Hash.hash);
     let userObj : ?User = userList.get(caller);
-    let dummyComplaint = {
+    let dummyComplaint: Complaint = {
       title = "";
       summary = "";
       location = "";
@@ -511,6 +520,8 @@ actor {
       FIR = "NONE";
       chargesheet = "NONE";
       closureReport = "NONE";
+      complainantPrincipal = caller;
+      updatedOn=Time.now();
     };
     let dummyComplaintId: Nat = 0;
     switch (userObj) {
@@ -564,6 +575,16 @@ actor {
       case (?info) {
         var ownershipHistory: [Police] = getComplaintOwnershipHistoryPriv(complaintId);
         var currentIncharge: Police = ownershipHistory[ownershipHistory.size()-1];
+        var complainant: ?User = userList.get(info.complainantPrincipal);
+        var complainantName = "";
+        var complainantAddress = "";
+        switch(complainant) {
+          case null {};
+          case (?user) {
+            complainantName := user.name;  
+            complainantAddress := user.address;
+          };
+        };
         var complaintView: ComplaintViewModel  = {
           FIR = info.FIR;
           chargesheet = info.chargesheet;
@@ -580,6 +601,9 @@ actor {
           summary = info.summary;
           typee = info.typee;
           title = info.title;
+          complainantName = complainantName;
+          complainantAddress = complainantAddress;
+          updatedOn = info.updatedOn;
         };    
         return complaintView;    
       };
@@ -724,6 +748,7 @@ actor {
       case (null) { finalResult := false };
       case (?obj) {
         var oldComplaints : [Nat] = obj.complaints;
+        var currTime = Time.now();
         numComplaints := numComplaints +1;
         complaintList.put(
           numComplaints,
@@ -738,6 +763,8 @@ actor {
             FIR = "NONE";
             chargesheet = "NONE";
             closureReport = "NONE";
+            complainantPrincipal = caller;
+            updatedOn = Time.now();
           },
         );
         oldComplaints := Array.append(oldComplaints, [numComplaints]);
@@ -783,6 +810,8 @@ actor {
             location = oldComplaint.location;
             status = textToStatusVariant(status);
             typee = "cognizable";
+            complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
           };
           complaintList.put(complaintId, newComplaint);
           return true;
@@ -812,7 +841,9 @@ actor {
             status = oldComplaint.status;
             FIR = oldComplaint.FIR ;// CID - step1
             chargesheet = oldComplaint.chargesheet; // CID
-            closureReport = oldComplaint.closureReport // CID
+            closureReport = oldComplaint.closureReport; // CID
+            complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -909,7 +940,9 @@ actor {
             status = oldComplaint.status;
             FIR = fileCID ;// CID - step1
             chargesheet = oldComplaint.chargesheet; // CID
-            closureReport = oldComplaint.closureReport // CID
+            closureReport = oldComplaint.closureReport; // CID
+            complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -962,7 +995,9 @@ actor {
             status = oldComplaint.status;
             FIR = oldComplaint.FIR ;// CID - step1
             chargesheet = fileCID; // CID
-            closureReport = oldComplaint.closureReport // CID
+            closureReport = oldComplaint.closureReport; // CID
+            complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -1015,7 +1050,9 @@ actor {
             status = oldComplaint.status;
             FIR = oldComplaint.FIR ;// CID - step1
             chargesheet = oldComplaint.chargesheet; // CID
-            closureReport = fileCID // CID
+            closureReport = fileCID; // CID
+            complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
