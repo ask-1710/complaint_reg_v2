@@ -9,7 +9,7 @@ body {
   .body-container{
     width: 100vw;
     height: 100vh;  
-    background-image: rgb(149, 214, 222);
+    background-color: rgb(149, 214, 222);
     overflow: scroll;
   }
 
@@ -27,7 +27,7 @@ body {
   }
   
   .registration-card{
-    background-image: rgb(149, 214, 222);
+    background-color: rgb(149, 214, 222);
     margin: auto;
     color: black;
     text-align: left;
