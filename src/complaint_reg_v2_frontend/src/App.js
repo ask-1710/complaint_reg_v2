@@ -184,7 +184,7 @@ const App = function () {
           }
         ></Route>
         <Route
-          path="/complaintview/:complaintId"
+          path="/complaintview/:complaintId/*"
           element={
             <ComplaintView
               createActor={createActor}

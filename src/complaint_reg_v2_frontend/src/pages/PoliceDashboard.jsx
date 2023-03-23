@@ -195,7 +195,7 @@ const PoliceDashboard = ({
           <div className="list-group">
             {complaints.map((complaint) => {
               return (
-                <>
+                <div key={complaint[0]}>
                   {selectedComplaint == complaint[0] && isInvestigator ? (
                     <div className="list-group-item my-2 list-group-item-action align-items-start" key={complaint[0]}>
                       <div className="flex d-flex flex-column p-2 m-4">
@@ -431,7 +431,7 @@ const PoliceDashboard = ({
                       <button className="button-27 small-button" onClick={()=>{navigate(`/complaintview/${complaint[0]}`, {state: {userType: "police"}})}}>View details</button>
                     </div>
                   )}
-                </>
+                </div>
               );
             })}
           </div>
