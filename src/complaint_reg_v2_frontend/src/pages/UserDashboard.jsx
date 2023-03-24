@@ -115,10 +115,10 @@ const UserDashboard = ({
                           data-toggle="list"
                         >
                           <ul className="complaint-list">
-                            <li><b>Short description</b>{' : ' + complaint[1].title}</li>
-                            <li><b>Summary of incident</b>{' : ' + complaint[1].summary}</li>
+                            <li><b>Subject</b>{' : ' + complaint[1].title}</li>
+                            <li><b>Description</b>{' : ' + complaint[1].summary}</li>
                             <li><b>Date of occurence</b>{' : ' + complaint[1].date}</li>
-                            <li><b>Location of occurence</b>{' : ' + complaint[1].location}</li>
+                            <li><b>Area of occurence</b>{' : ' + complaint[1].location}</li>
                             <li>
                               {possibleStages[
                                 Object.keys(complaint[1].status)[0]

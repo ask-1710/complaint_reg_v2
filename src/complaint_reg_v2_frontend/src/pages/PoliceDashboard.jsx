@@ -200,7 +200,7 @@ const PoliceDashboard = ({
                     <div className="list-group-item my-2 list-group-item-action align-items-start" key={complaint[0]}>
                       <div className="flex d-flex flex-column p-2 m-4">
                         <div>
-                          Short description:{" "}
+                          Subject:{" "}
                           <input
                             className="form-control"
                             type="text"
@@ -209,7 +209,7 @@ const PoliceDashboard = ({
                           />
                         </div>
                         <div>
-                          Summary:{" "}
+                          Description:{" "}
                           <textarea
                             className="wrap-content form-control"
                             value={complaint[1].summary}
@@ -226,7 +226,7 @@ const PoliceDashboard = ({
                           />
                         </div>
                         <div>
-                          Location of occurence:{" "}
+                          Area of occurence:{" "}
                           <input
                             className="form-control"
                             type="text"
@@ -371,11 +371,11 @@ const PoliceDashboard = ({
                       >
                         <ul className="complaint-list">
                           <li>
-                            <b>Short description</b>
+                            <b>Subject</b>
                             {" : " + complaint[1].title}
                           </li>
                           <li>
-                            <b>Summary of incident</b>
+                            <b>Description of incident</b>
                             {" : " + complaint[1].summary}
                           </li>
                           <li>
@@ -383,7 +383,7 @@ const PoliceDashboard = ({
                             {" : " + complaint[1].date}
                           </li>
                           <li>
-                            <b>Location of occurence</b>
+                            <b>Area of occurence</b>
                             {" : " + complaint[1].location}
                           </li>{" "}
                           <li>

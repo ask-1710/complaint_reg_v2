@@ -22,6 +22,8 @@ const FileFrame = ({actor, createActor}) => {
     const [fileRequests, setFileRequests] = useState([]);
     const [aesKey, setAESKey] = useState("");
     const [providingAccessStatus, setProvidingAccessStatus]=useState(null);
+    const [totalQueryTime, setTotalQueryTime] = useState(10);
+
 
     const location = useLocation();
     const userType = location?.state?.userType;
@@ -57,9 +59,12 @@ const FileFrame = ({actor, createActor}) => {
             setFileRequests(getRequests);
         }
         await getAESKeyToViewFile();
+        
     };
 
     const getAESKeyToViewFile = async () => {
+        var startTime = Date.now();
+
         console.time("decrypt-aes-key");
         console.log("retrieve keys");
         const keys = await actor.getEncAESKeyForDecryption(cid);
@@ -84,7 +89,11 @@ const FileFrame = ({actor, createActor}) => {
             const actualAesKey = plaintext.toString('base64');
             setAESKey(actualAesKey);
         }
-        console.timeEnd("decrypt-aes-key");
+        console.timeEnd("decrypt-aes-key");        
+        var endTime = Date.now();
+
+        setTotalQueryTime((endTime-startTime));
+
     };
 
     async function displayFile() {
@@ -147,6 +156,9 @@ const FileFrame = ({actor, createActor}) => {
 
     return (
         <div className='container'>
+            {
+                hasAccess && (<h4>The symmetric key was decrypted in {totalQueryTime} ms</h4>)
+            }
             {
                 hasAccess!=null && hasAccess==false && ( 
                     !hasRequestedAccess ? (

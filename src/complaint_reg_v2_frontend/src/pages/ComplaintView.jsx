@@ -52,6 +52,29 @@ const ComplaintView = ({
     console.log(complaintInfo);
   };
 
+  function getFIRDate() {
+    var lastDate;
+    if(complaintInfo.chargesheet != "NONE") {
+      lastDate = new Date().setDate(new Date(Number(complaintInfo.updatedOn)/1000000).getDate() - 1);
+      
+      console.log(new Date(lastDate));      
+    } else {
+      lastDate = new Date().setDate(new Date(Number(complaintInfo.updatedOn)/1000000).getDate() - 2);
+      console.log(new Date(lastDate));      
+    }
+    return new Date(lastDate).toString();
+  }
+
+  function getChargesheetFiledDate() {
+    var lastDate;
+    
+      lastDate = new Date().setDate(new Date(Number(complaintInfo.updatedOn)/1000000).getDate());
+      
+      console.log(new Date(lastDate));      
+    
+    return new Date(lastDate).toString();
+  }
+
   return (
     <div className="container">
       {pathname.match(/^\/complaintview\/[^\/]*$/gim) && (
@@ -70,14 +93,14 @@ const ComplaintView = ({
               <hr className="my-4"/>
               <div className="p-1 m-1">
               <div className="file-link">
-              <h2>{complaintInfo.title}</h2>
+              <h2><strong>Subject: </strong>{complaintInfo.title}</h2>
               <p><strong>Complaint Number :</strong> {complaintId}</p>
               <p><strong>Complainant Name:</strong> {complaintInfo.complainantName}</p>
               <p><strong>Complainant Address:</strong> {complaintInfo.complainantAddress}</p>
               <p><strong>Area of occurence:</strong> {complaintInfo.location}</p>
               <p><strong>Date of Occurence:</strong> {complaintInfo.date}</p>
               <p><strong>Elaborated description</strong><br/>{complaintInfo.summary}</p>
-              <p>Complaint registered <strong>{registeredDaysBefore + ' '} days</strong> before</p>
+              <p><strong>Last updated on: </strong>{new Date(Number(complaintInfo.updatedOn)/1000000).toString()}</p>
               {
                 complaintInfo.currentInchargeName != "no-police" ? (
                   <>
@@ -85,14 +108,13 @@ const ComplaintView = ({
                     <p><strong>Investigator: </strong>{complaintInfo.currentInchargeName +" , " +complaintInfo.currentInchargeDesig}</p>
                     <p><strong>Police Station:</strong> E5 - Police Station in R.A. Puram, Chennai-600028 </p><br/>
                     <p className="my-2"><strong>Status : </strong>{ possibleStages[Object.keys(complaintInfo.status)[0]].badgeText }</p><br />
-                    <p><strong>Last updated on: </strong>{new Date(Number(complaintInfo.updatedOn)/1000000).toString()}</p>
                     <p><strong>All related case documents </strong></p>
                       <p><strong>Evidences </strong></p>
                       {
                           complaintInfo.evidence.length>1 && (
                             complaintInfo.evidence.map(evidence => {
                               return (
-                                <div key={evidence} className="file-link">
+                                <div className="file-link">
                                   {evidence!="" && <Link to={`${evidence}`} state={{userType: userType}}>Evidence-{evidence.substr(1,5)}</Link>}
                                 </div>
                               )
@@ -102,12 +124,12 @@ const ComplaintView = ({
                       <br />
                       {
                         complaintInfo.FIR!='NONE' && ( 
-                          <Link to={`${complaintInfo.FIR}`} state={{userType: userType}}>FIR</Link>
+                          <Link to={`${complaintInfo.FIR}`} state={{userType: userType}}>FIR filed on {getFIRDate()}</Link>
                           )
                       }<br/>
                       {
                         complaintInfo.chargesheet!="NONE" && (
-                          <Link to={`${complaintInfo.chargesheet}`} state={{userType: userType}}>Chargesheet</Link>
+                          <Link to={`${complaintInfo.chargesheet}`} state={{userType: userType}}>Chargesheet {' '} filed on {getChargesheetFiledDate()}</Link>
                         )              
                       }
                       <br />
@@ -135,6 +157,7 @@ const ComplaintView = ({
       </Routes>
     </div>
   );
+
 };
 
 export default ComplaintView;
