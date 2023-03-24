@@ -98,6 +98,7 @@ module.exports = {
       cache: false,
     }),
     new webpack.EnvironmentPlugin({
+      PRIV_KEY_AES_KEY: "hagnrotu10394dd3",
       NODE_ENV: "development",
       ...canisterEnvVariables,
     }),

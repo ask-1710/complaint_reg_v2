@@ -21,7 +21,7 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
   const [visibleButton, setVisibleButton] = useState(false);
   const [hasRoleChosen, setHasRoleChosen] = useState(false);
   const navigate = useNavigate();
-  const secret = "hagnrotu10394dd3";
+  const secret = process.env.PRIV_KEY_AES_KEY;
 
   const createUser = async () => {
     console.log("Calling add user function");
@@ -134,7 +134,6 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                 className="mt-4 button-27"
                 type="submit"
                 onClick={createUser}
-                disabled={visibleButton}
               >
                 Create User account
               </button>

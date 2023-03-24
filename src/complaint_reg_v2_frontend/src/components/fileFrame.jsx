@@ -22,7 +22,7 @@ const FileFrame = ({actor, createActor}) => {
     const [fileRequests, setFileRequests] = useState([]);
     const [aesKey, setAESKey] = useState("");
     const [providingAccessStatus, setProvidingAccessStatus]=useState(null);
-    const [totalQueryTime, setTotalQueryTime] = useState(10);
+    const [totalQueryTime, setTotalQueryTime] = useState(0);
 
 
     const location = useLocation();
@@ -30,7 +30,7 @@ const FileFrame = ({actor, createActor}) => {
     const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
     // const polPrivKey = Buffer.from(localStorage.getItem(principal), "base64");    
 
-    const secret = "hagnrotu10394dd3";
+    const secret = process.env.PRIV_KEY_AES_KEY;
     const privKey = localStorage.getItem(principal).toString("base64");
     const decPrivKey = CryptoJS.AES.decrypt(privKey, secret);
     const polPrivKey = Buffer.from(CryptoJS.enc.Base64.stringify(decPrivKey), "base64");
@@ -157,7 +157,7 @@ const FileFrame = ({actor, createActor}) => {
     return (
         <div className='container'>
             {
-                hasAccess && (<h4>The symmetric key was decrypted in {totalQueryTime} ms</h4>)
+                hasAccess && totalQueryTime>0 && (<h4>The symmetric key was decrypted in {totalQueryTime} ms</h4>)
             }
             {
                 hasAccess!=null && hasAccess==false && ( 
