@@ -28,7 +28,7 @@ const FileFrame = ({actor, createActor}) => {
     const privKey = localStorage.getItem(principal).toString("base64");
     const decPrivKey = CryptoJS.AES.decrypt(privKey, secret);
     const myPrivKeyBuf = Buffer.from(CryptoJS.enc.Base64.stringify(decPrivKey), "base64");
-    const offsetTime = 300;
+    const offsetTime = 200;
 
     const ipfs = create({
         url: "http://127.0.0.1:5002/",
