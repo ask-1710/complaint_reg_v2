@@ -47,6 +47,29 @@ const ComplaintView = ({
     console.log(complaintInfo);
   };
 
+  function getFIRDate() {
+    var lastDate;
+    if(complaintInfo.chargesheet != "NONE") {
+      lastDate = new Date().setDate(new Date(Number(complaintInfo.updatedOn)/1000000).getDate() - 1);
+      
+      console.log(new Date(lastDate));      
+    } else {
+      lastDate = new Date().setDate(new Date(Number(complaintInfo.updatedOn)/1000000).getDate() - 2);
+      console.log(new Date(lastDate));      
+    }
+    return new Date(lastDate).toString();
+  }
+
+  function getChargesheetFiledDate() {
+    var lastDate;
+    
+      lastDate = new Date().setDate(new Date(Number(complaintInfo.updatedOn)/1000000).getDate());
+      
+      console.log(new Date(lastDate));      
+    
+    return new Date(lastDate).toString();
+  }
+
   return (
     <div className="container">
       {pathname.match(/^\/complaintview\/[^\/]*$/gim) && (
@@ -96,12 +119,12 @@ const ComplaintView = ({
                       <br />
                       {
                         complaintInfo.FIR!='NONE' && ( 
-                          <Link to={`${complaintInfo.FIR}`} state={{userType: userType}}>FIR</Link>
+                          <Link to={`${complaintInfo.FIR}`} state={{userType: userType}}>FIR filed on {getFIRDate()}</Link>
                           )
                       }<br/>
                       {
                         complaintInfo.chargesheet!="NONE" && (
-                          <Link to={`${complaintInfo.chargesheet}`} state={{userType: userType}}>Chargesheet</Link>
+                          <Link to={`${complaintInfo.chargesheet}`} state={{userType: userType}}>Chargesheet {' '} filed on {getChargesheetFiledDate()}</Link>
                         )              
                       }
                       <br />

@@ -34,9 +34,9 @@ const ComplaintForm = ({createActor, actor}) => {
       <div className="mx-auto">
         {complaintCreated && <p className="success-message">Complaint registered</p>}
         {errorWhileComplaint && <p className="error-message">Complaint registeration failed</p>}
-        <Card className="bg-light w-75 mx-auto">
+        <Card className=" bg-secondary w-75 mx-auto">
             <div className="row my-2 mx-5">
-              <h5>Fill in the details</h5>
+              <h5 className="text-white">Fill in the details of the complaint</h5>
             </div>
           <Card.Body>
             <div className="row mt-2 justify-content-center">
@@ -99,7 +99,7 @@ const ComplaintForm = ({createActor, actor}) => {
               </div>
             </div>
             <div className="row mt-4">
-              <button className="button-27" onClick={submitComplaint}>Add complaint</button>
+              <button className="button-27 not-button-27" onClick={submitComplaint}>Add complaint</button>
             </div>
           </Card.Body>
         </Card>

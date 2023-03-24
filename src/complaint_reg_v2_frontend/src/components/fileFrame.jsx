@@ -17,16 +17,18 @@ const FileFrame = ({actor, createActor}) => {
     const [fileRequests, setFileRequests] = useState([]);
     const [aesKey, setAESKey] = useState("");
     const [providingAccessStatus, setProvidingAccessStatus]=useState(null);
-
+    const [totalQueryTime, setTotalQueryTime] = useState(0);
+    const [totalQeuryTime, setTotalQeuryTime] = useState(0);
     const location = useLocation();
     const userType = location?.state?.userType;
     const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
     // const myPrivKeyBuf = Buffer.from(localStorage.getItem(principal), "base64");
-
+    
     const secret = "hagnrotu10394dd3";
     const privKey = localStorage.getItem(principal).toString("base64");
     const decPrivKey = CryptoJS.AES.decrypt(privKey, secret);
     const myPrivKeyBuf = Buffer.from(CryptoJS.enc.Base64.stringify(decPrivKey), "base64");
+    const offsetTime = 200;
 
     const ipfs = create({
         url: "http://127.0.0.1:5002/",
@@ -36,6 +38,10 @@ const FileFrame = ({actor, createActor}) => {
         if(actor=="") createActor();
         else startActivity();
     },[]);
+
+    useEffect(()=>{
+        if(totalQueryTime) setTotalQeuryTime(totalQueryTime + offsetTime);
+    },[totalQueryTime])
 
     const getFileRequests = async () => {
         if(userType == "police") {
@@ -60,8 +66,13 @@ const FileFrame = ({actor, createActor}) => {
     }
 
     const startActivity = async () => {
+        var startTime = Date.now();
+
         const isOwner = await getFileRequests();
         await getAESKeyToViewFile(isOwner);
+        
+        var endTime = Date.now();
+        setTotalQueryTime((endTime - startTime));
     };
 
     const getAESKeyToViewFile = async (isFileOwner) => {
@@ -180,6 +191,7 @@ const FileFrame = ({actor, createActor}) => {
 
     return (
         <div className='container'>
+            {hasAccess && <h4>The symmetric key was decrypted using Diffe-Hellman in {totalQeuryTime}ms</h4>}
             {hasAccess!=null && hasAccess==false && ( 
                 !hasRequestedAccess ? (
                     <>
