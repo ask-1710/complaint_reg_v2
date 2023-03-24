@@ -135,10 +135,13 @@ const FileFrame = ({actor, createActor}) => {
         setDecryptedString(decryptedString);
         // CPU Intensive BUT CANNOT DOWNLOAD PDF
         let pdfWindow = window.open("")
-        pdfWindow.oncontextmenu=function(){return false;}
+        
         pdfWindow.document.write("<iframe width='100%' height='100%' src='data:application/pdf;base64," +
         encodeURI(decryptedString) + 
-        "#toolbar=0&navpanes=0' oncontextmenu='return false;'></iframe>");
+        "#toolbar=0&navpanes=0'></iframe>");
+        let a = pdfWindow.document.getElementsByTagName("iframe").item(0);
+        a.oncontextmenu=function(ev){ev.preventDefault(); return false;}
+        pdfWindow.focus();
 
     
     }
