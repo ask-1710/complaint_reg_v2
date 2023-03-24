@@ -8,7 +8,7 @@ const CryptoJS = require("crypto-js")
 
 
 const Registeration = ({ actor, principalId , setIsNewUser }) => {
-  const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "" });
+  const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "", emailID: "" });
   const [policeInfo, setPoliceInfo] = useState({
     name: "",
     designation: "",
@@ -18,6 +18,7 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
     mobileNum: ""
   });
   const [isUser, setIsUser] = useState(false);
+  const [visibleButton, setVisibleButton] = useState(false);
   const [hasRoleChosen, setHasRoleChosen] = useState(false);
   const navigate = useNavigate();
   const secret = "hagnrotu10394dd3";
@@ -101,11 +102,39 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                   }}
                 ></input>
               </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter mobile number"
+                  type="text"
+                  id="userMobile"
+                  name="userMobile"
+                  value={userInfo.mobileNum}
+                  onChange={(ev) => {
+                    if(ev.target.value.length==10) setVisibleButton(true);
+                    setUserInfo({ ...userInfo, ["mobileNum"]: ev.target.value });
+                  }}
+                ></input>
+              </div>              
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter email"
+                  type="email"
+                  id="userEmail"
+                  name="userEmail"
+                  value={userInfo.emailID}
+                  onChange={(ev) => {
+                    setUserInfo({ ...userInfo, ["emailID"]: ev.target.value });
+                  }}
+                ></input>
+              </div>
 
               <button
                 className="mt-4 button-27"
                 type="submit"
                 onClick={createUser}
+                disabled={visibleButton}
               >
                 Create User account
               </button>
