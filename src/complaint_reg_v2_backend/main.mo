@@ -8,6 +8,7 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import TrieSet "mo:base/TrieSet";
 import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
@@ -609,6 +610,8 @@ actor {
       };
     };
   };
+
+  // enrich trophy toilet empty february green garlic predict kidney hard library light input adjust unfair abstract novel orange vital galaxy grow cart identify crash
   public query ({caller}) func getEncAESKeyForDecryption(cid: Text): async UserCIDKey {
     let doesUserHaveKey = doesUserHaveFileAccess(caller, cid);
     if(doesUserHaveKey) {
@@ -894,9 +897,11 @@ actor {
       };
     };
   };
+  var instanceId = 0;
+  var numberOfCanisters = 4;
   public shared ({ caller }) func provideAccessToFile(principalText: Text, cid: Text, newKey: Text) : async Bool {
     let principal = Principal.fromText(principalText);
-    
+    if (Nat32.toNat(Text.hash(principalText)) % numberOfCanisters != instanceId) return false;
     let isOwner:Bool = isFileOwner(caller, cid);
     if(isOwner) {
         var oldRequests = userFileAccessRequests.get(cid);
