@@ -823,10 +823,11 @@ actor {
       };
     }
   };
+  let process= {env={numberOfCanisters = 5}};
   public shared ({ caller }) func addEvidence(complaintId: Nat, fileCID: Text, encAESKey: Text, AESiv: Text): async Bool {
     // add CID to complaint
     // add uploader, aes key, aes iv to uploaderAESKeys
-    // add key to uploaders access keys
+    // add key to uploaders access keys4
     var complaintObj = complaintList.get(complaintId);
     switch(complaintObj) {
       case(null) { return false; };
@@ -898,10 +899,11 @@ actor {
     };
   };
   var instanceId = 0;
-  var numberOfCanisters = 4;
+  var numberOfCanisters = process.env.numberOfCanisters;
   public shared ({ caller }) func provideAccessToFile(principalText: Text, cid: Text, newKey: Text) : async Bool {
     let principal = Principal.fromText(principalText);
-    if (Nat32.toNat(Text.hash(principalText)) % numberOfCanisters != instanceId) return false;
+    let belongstToThisInstance: Bool = loadBalance(principalText);
+    if (belongstToThisInstance==false) return false;
     let isOwner:Bool = isFileOwner(caller, cid);
     if(isOwner) {
         var oldRequests = userFileAccessRequests.get(cid);
@@ -1038,6 +1040,11 @@ actor {
       };
     };
     return false;
+  };
+  private func loadBalance(principalText: Text) : Bool {
+      let numberOfInstances = process.env.numberOfCanisters;
+      if (Nat32.toNat(Text.hash(principalText)) % numberOfCanisters != instanceId) return false;
+      return true;
   };
   public shared ({ caller }) func addClosureReport(complaintId: Nat, fileCID: Text, encAESKey: Text, AESiv: Text): async Bool {
     var complaintObj = complaintList.get(complaintId);
