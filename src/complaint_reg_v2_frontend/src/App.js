@@ -126,6 +126,7 @@ const App = function () {
 
   return (
     <div className="body-container">
+      <h1>Complaint Tracking & Criminal Investigation System</h1>
       {pathname == "/" && (
         <>
           {isConnected && isSetupComplete ? (
