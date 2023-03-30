@@ -63,6 +63,7 @@ module.exports = {
       events: require.resolve("events/"),
       stream: require.resolve("stream-browserify/"),
       util: require.resolve("util/"),
+      "crypto": require.resolve("crypto-browserify")
     },
   },
   output: {
@@ -97,6 +98,7 @@ module.exports = {
       cache: false,
     }),
     new webpack.EnvironmentPlugin({
+      PRIV_KEY_AES_KEY: "hagnrotu10394dd3",
       NODE_ENV: "development",
       ...canisterEnvVariables,
     }),

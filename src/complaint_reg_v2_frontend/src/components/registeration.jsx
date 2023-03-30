@@ -1,34 +1,52 @@
 import React, { useEffect } from "react";
-import ReactDOM from "react-dom/client";
 import Switch from "react-switch";
 import { useState } from "react";
-import { Card } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+// import * as eccryptoJS from 'eccrypto-js';
+var eccrypto = require("eccrypto");
+const CryptoJS = require("crypto-js")
+
 
 const Registeration = ({ actor, principalId , setIsNewUser }) => {
-  const [userInfo, setUserInfo] = useState({ name: "", address: "" });
+  const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "", emailID: "" });
   const [policeInfo, setPoliceInfo] = useState({
     name: "",
     designation: "",
-    role: "",
+    role: "investigator",
+    stationCode: "",
+    stationAddress: "",
+    mobileNum: ""
   });
   const [isUser, setIsUser] = useState(false);
+  const [visibleButton, setVisibleButton] = useState(false);
   const [hasRoleChosen, setHasRoleChosen] = useState(false);
   const navigate = useNavigate();
+  const secret = process.env.PRIV_KEY_AES_KEY;
 
   const createUser = async () => {
     console.log("Calling add user function");
-    const createdUserResp = await actor.addUser(userInfo.name, "user",userInfo.address);
+    const privKey = eccrypto.generatePrivate();
+    const principalText = window.ic.plug.sessionManager.sessionData.principalId.toString();
+    const encPrivKey = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(privKey.toString("base64")), secret).toString(); // base64, encrypted key
+    localStorage.setItem(principalText, encPrivKey);
+    const pubKey = eccrypto.getPublic(privKey);
+    const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public key
     console.log(createdUserResp);
     setIsNewUser(false)
     navigate("/userdashboard", { state: { principalId , isConnected: true } });
   };
   const createPolice = async () => {
     console.log("Calling add police function");
+    const privKey = eccrypto.generatePrivate();
+    const principalText = window.ic.plug.sessionManager.sessionData.principalId.toString();
+    const encPrivKey = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(privKey.toString("base64")), secret).toString(); // base64, encrypted key
+    localStorage.setItem(principalText, encPrivKey);
+    const pubKey = eccrypto.getPublic(privKey);
     const createdPoliceResp = await actor.addPolice(
       policeInfo.name,
       policeInfo.designation,
-      policeInfo.role
+      policeInfo.role,
+      pubKey.toString("base64")
     );
     console.log(createdPoliceResp);
     setIsNewUser(false);
@@ -84,6 +102,33 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                   }}
                 ></input>
               </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter mobile number"
+                  type="text"
+                  id="userMobile"
+                  name="userMobile"
+                  value={userInfo.mobileNum}
+                  onChange={(ev) => {
+                    if(ev.target.value.length==10) setVisibleButton(true);
+                    setUserInfo({ ...userInfo, ["mobileNum"]: ev.target.value });
+                  }}
+                ></input>
+              </div>              
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter email"
+                  type="email"
+                  id="userEmail"
+                  name="userEmail"
+                  value={userInfo.emailID}
+                  onChange={(ev) => {
+                    setUserInfo({ ...userInfo, ["emailID"]: ev.target.value });
+                  }}
+                ></input>
+              </div>
 
               <button
                 className="mt-4 button-27"
@@ -108,7 +153,7 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                   }}
                 ></input>
               </div>
-              <div className="row mt-2">
+              {/* <div className="row mt-2">
                 <div className="col-4">
                     <p className="placeholder-text-color">Enter Role</p>
                 </div>
@@ -147,7 +192,7 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                 />
                 General
               </div>
-              </div>
+              </div> */}
               <div className="row mt-2 justify-content-center">
                 <input
                   type="type"
@@ -164,6 +209,55 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                   }}
                 />
               </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter station code"
+                  type="text"
+                  id="stationCode"
+                  name="stationCode"
+                  value={policeInfo.stationCode}
+                  onChange={(ev) => {
+                    setPoliceInfo({
+                      ...policeInfo,
+                      ["stationCode"]: ev.target.value,
+                    });
+                  }}
+                ></input>
+              </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter station address"
+                  type="text"
+                  id="stationAddress"
+                  name="stationAddress"
+                  value={policeInfo.stationAddress}
+                  onChange={(ev) => {
+                    setPoliceInfo({
+                      ...policeInfo,
+                      ["stationAddress"]: ev.target.value,
+                    });
+                  }}
+                ></input>
+              </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter mobile number"
+                  type="text"
+                  id="mobileNum"
+                  name="mobileNum"
+                  value={policeInfo.mobileNum}
+                  onChange={(ev) => {
+                    setPoliceInfo({
+                      ...policeInfo,
+                      ["mobileNum"]: ev.target.value,
+                    });
+                  }}
+                ></input>
+              </div>
+
               <button
                 className="mt-4 button-27"
                 type="submit"

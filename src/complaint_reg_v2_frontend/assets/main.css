@@ -9,7 +9,7 @@ body {
   .body-container{
     width: 100vw;
     height: 100vh;  
-    background-image: radial-gradient(rgb(99, 240, 233), rgb(253, 253, 8));
+    background-color: rgb(149, 214, 222);
     overflow: scroll;
   }
 
@@ -27,7 +27,7 @@ body {
   }
   
   .registration-card{
-    background-image: radial-gradient(rgba(180, 238, 235, 0.8));
+    background-color: rgb(149, 214, 222);
     margin: auto;
     color: black;
     text-align: left;
@@ -113,6 +113,11 @@ body {
     box-shadow: none;
     transform: translateY(0);
   }
+
+  .not-button-27 {
+    background-color: #FFFFFF;
+    color: black;
+  }
   
   .vertical-center {
     margin: 0;
@@ -144,7 +149,39 @@ body {
   .complaint-list{
     list-style-type: none;
   }
+
+  .small-right-bottom-button {
+    width: fit-content;
+    float: right;
+  }
   
+  .small-button {
+    width: fit-content;
+  }
+  
+  .success-message {
+    color: rgb(11, 162, 11);
+  }
+
+  .error-message {
+    color: rgb(196, 8, 8);
+  }
+
+  .text-muted {
+    font-weight: light;
+    color: rgb(48, 48, 48);
+  }
+
+  .text-white {
+    color: wheat;
+  }
+
+  .file-link{
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-size: 20px;
+        
+  }
+
   /* The typing effect */
   @keyframes typing {
     from { width: 0 }
