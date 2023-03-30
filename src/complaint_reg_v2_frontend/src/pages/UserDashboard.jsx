@@ -2,9 +2,6 @@ import React, { useEffect, useState } from "react";
 import Spinner from "react-bootstrap/Spinner";
 import { Badge } from "react-bootstrap";
 import { useLocation, useNavigate } from "react-router-dom";
-import { idlFactory } from "../../../declarations/complaint_reg_v2_backend";
-import { Card } from "../../../../node_modules/react-bootstrap/esm/index";
-import CardHeader from "../../../../node_modules/react-bootstrap/esm/CardHeader";
 import ComplaintForm from "../components/complaintForm";
 
 const UserDashboard = ({
@@ -14,7 +11,6 @@ const UserDashboard = ({
   setIsNewUser,
   setIsSetupComplete,
 }) => {
-  const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";  
   const navigate = useNavigate();
   const [user, setUser] = useState({
     name: "",

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { complaint_reg_v2_backend } from "../../../declarations/complaint_reg_v2_backend";
-import { idlFactory } from "../../../declarations/complaint_reg_v2_backend";
+import { complaint_reg_v2_backend_1 } from "../../../declarations/complaint_reg_v2_backend_1";
+import { idlFactory } from "../../../declarations/complaint_reg_v2_backend_1";
 import { useEffect } from "react";
 import { Badge } from "react-bootstrap";
 import { create } from "ipfs-http-client";
@@ -64,7 +64,7 @@ const PoliceDashboard = ({
   },[selectedComplaint]);
 
   async function getUnassignedComplaints() {
-    var complaints = await complaint_reg_v2_backend.getUnassignedComplaints();
+    var complaints = await complaint_reg_v2_backend_1.getUnassignedComplaints();
     console.log(complaints);
     // const complaints=[[0, {title: "abc", summary: "sum", date: "12/3/22", location: "delhi"}],
     // [1, {title: "abc", summary: "sum", date: "12/3/22", location: "delhi"}]];
@@ -148,7 +148,7 @@ const PoliceDashboard = ({
 
   async function encryptAESKeyAndSave(aesKey,complaintId, fileCID, document) {
     const principalId = window.ic.plug.sessionManager.sessionData.principalId;
-    const pubKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principalId); // encryption with public key
+    const pubKey = await complaint_reg_v2_backend_1.getPublicKeyByPrincipal(principalId); // encryption with public key
     const polPubKey = Buffer.from(pubKey, "base64");
     const aesSymmetricKey = Buffer.from(aesKey, "base64");
     eccrypto.encrypt(polPubKey, aesSymmetricKey).then(async function(encrypted) {

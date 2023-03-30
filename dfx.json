@@ -1,12 +1,22 @@
 {
   "canisters": {
-    "complaint_reg_v2_backend": {
-      "main": "src/complaint_reg_v2_backend/main.mo",
+    "complaint_reg_v2_backend_1": {
+      "main": "src/complaint_reg_v2_backend_1/main.mo",
+      "type": "motoko"
+    },
+    "complaint_reg_v2_backend_2": {
+      "main": "src/complaint_reg_v2_backend_2/main.mo",
+      "type": "motoko"
+    },    
+    "complaint_reg_v2_backend_3": {
+      "main": "src/complaint_reg_v2_backend_3/main.mo",
       "type": "motoko"
     },
     "complaint_reg_v2_frontend": {
       "dependencies": [
-        "complaint_reg_v2_backend"
+        "complaint_reg_v2_backend_1",
+        "complaint_reg_v2_backend_2",
+        "complaint_reg_v2_backend_3"
       ],
       "frontend": {
         "entrypoint": "src/complaint_reg_v2_frontend/src/index.html"

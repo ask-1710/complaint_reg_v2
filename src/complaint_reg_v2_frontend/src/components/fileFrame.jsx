@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { create } from "ipfs-http-client";
-import { complaint_reg_v2_backend } from '../../../declarations/complaint_reg_v2_backend';
+import { complaint_reg_v2_backend_1 } from '../../../declarations/complaint_reg_v2_backend_1';
 
 var eccrypto = require("eccrypto");
 
@@ -132,7 +132,7 @@ const FileFrame = ({actor, createActor}) => {
     }
 
     async function provideFileAccess(principal) {
-        var pubKeyOfRequestor = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principal);
+        var pubKeyOfRequestor = await complaint_reg_v2_backend_1.getPublicKeyByPrincipal(principal);
         console.log("pub key of user " + pubKeyOfRequestor.toString());
 
         // encrypt AES Key with pubKeyOfUser

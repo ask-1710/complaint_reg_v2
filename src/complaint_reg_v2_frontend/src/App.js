@@ -5,12 +5,12 @@ import React, { useState, useEffect } from "react";
 import UserDashboard from "./pages/UserDashboard";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { complaint_reg_v2_backend } from "../../declarations/complaint_reg_v2_backend";
-import { idlFactory } from "../../declarations/complaint_reg_v2_backend";
+import { complaint_reg_v2_backend_1 } from "../../declarations/complaint_reg_v2_backend_1";
+import { idlFactory } from "../../declarations/complaint_reg_v2_backend_1";
 import ComplaintView from "./pages/ComplaintView";
 import FileFrame from "./components/fileFrame";
-const CANISTER_ID = process.env.COMPLAINT_REG_V2_BACKEND_CANISTER_ID;
-const prin = complaint_reg_v2_backend.principalId;
+const CANISTER_ID = process.env.COMPLAINT_REG_V2_BACKEND_1_CANISTER_ID;
+const prin = complaint_reg_v2_backend_1.principalId;
 const App = function () {
   const [actor, setActor] = useState("");
   const [isConnected, setIsConnected] = useState(false);
