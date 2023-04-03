@@ -2,12 +2,13 @@ import React, { useEffect } from "react";
 import Switch from "react-switch";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
 // import * as eccryptoJS from 'eccrypto-js';
 var eccrypto = require("eccrypto");
 const CryptoJS = require("crypto-js")
 
 
-const Registeration = ({ actor, principalId , setIsNewUser }) => {
+const Registeration = ({ actors, principalId , setIsNewUser }) => {
   const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "", emailID: "" });
   const [policeInfo, setPoliceInfo] = useState({
     name: "",
@@ -30,7 +31,11 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
     const encPrivKey = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(privKey.toString("base64")), secret).toString(); // base64, encrypted key
     localStorage.setItem(principalText, encPrivKey);
     const pubKey = eccrypto.getPublic(privKey);
-    const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public key
+    const mappedCanisterId = await complaint_reg_v2_load_balancer.mapUserToCanister(principalText, "user");
+    let actorOfCanisterId = actors[mappedCanisterId]; // actors is an array of actors created for all canisters
+    console.log(actorOfCanisterId);
+    console.log(mappedCanisterId);
+    const createdUserResp = await actorOfCanisterId.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public key
     console.log(createdUserResp);
     setIsNewUser(false)
     navigate("/userdashboard", { state: { principalId , isConnected: true } });
@@ -42,7 +47,9 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
     const encPrivKey = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(privKey.toString("base64")), secret).toString(); // base64, encrypted key
     localStorage.setItem(principalText, encPrivKey);
     const pubKey = eccrypto.getPublic(privKey);
-    const createdPoliceResp = await actor.addPolice(
+    const mappedCanisterId = await complaint_reg_v2_load_balancer.mapUserToCanister(principalText, "police");
+    let actorOfCanisterId = actors[mappedCanisterId]; // actors is an array of actors created for all canisters
+    const createdPoliceResp = await actorOfCanisterId.addPolice(
       policeInfo.name,
       policeInfo.designation,
       policeInfo.role,

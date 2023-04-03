@@ -13,7 +13,7 @@
     "prebuild": "npm run generate",
     "start": "webpack serve --mode development --env development",
     "prestart": "npm run generate",
-    "generate": "dfx generate complaint_reg_v2_backend_1;dfx generate complaint_reg_v2_backend_2;dfx generate complaint_reg_v2_backend_3"
+    "generate": "dfx generate complaint_reg_v2_backend_1;dfx generate complaint_reg_v2_backend_2;dfx generate complaint_reg_v2_backend_3;dfx generate complaint_reg_v2_load_balancer"
   },
   "devDependencies": {
     "@dfinity/agent": "0.15.1",

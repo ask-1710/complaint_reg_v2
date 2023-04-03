@@ -5,23 +5,30 @@ import React, { useState, useEffect } from "react";
 import UserDashboard from "./pages/UserDashboard";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { complaint_reg_v2_backend_1 } from "../../declarations/complaint_reg_v2_backend_1";
-import { idlFactory } from "../../declarations/complaint_reg_v2_backend_1";
+import {canisterId as canisterId1, complaint_reg_v2_backend_1, idlFactory as idlFactory1} from "../../declarations/complaint_reg_v2_backend_1";
+import {canisterId as canisterId2, complaint_reg_v2_backend_2, idlFactory as idlFactory2} from "../../declarations/complaint_reg_v2_backend_2";
+import {canisterId as canisterId3, complaint_reg_v2_backend_3, idlFactory as idlFactory3} from "../../declarations/complaint_reg_v2_backend_3";
+import {canisterId as canisterIdLB, complaint_reg_v2_load_balancer, idlFactory as idlFactoryLB} from "../../declarations/complaint_reg_v2_load_balancer";
+
 import ComplaintView from "./pages/ComplaintView";
 import FileFrame from "./components/fileFrame";
-const CANISTER_ID = process.env.COMPLAINT_REG_V2_BACKEND_1_CANISTER_ID;
-const prin = complaint_reg_v2_backend_1.principalId;
 const App = function () {
   const [actor, setActor] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [principalId, setPrincipalId] = useState("");
   const [publicKey, setPublicKey] = useState("");
   const [isSetupComplete, setIsSetupComplete] = useState(false);
+  const [actor1, setActor1] = useState("")
+  const [actor2, setActor2] = useState("")
+  const [actor3, setActor3] = useState("")
+  const [actorLB, setActorLB] = useState("")
   const [isNewUser, setIsNewUser] = useState([true, ""]);
+  const [actors, setActors] = useState([]);
   const navigate = useNavigate();
+  
 
-  const nnsCanisterId = CANISTER_ID;
-  const whitelist = [nnsCanisterId];
+
+  const whitelist = [canisterId1, canisterId2, canisterId3, canisterIdLB];
   const host = "http://127.0.0.1:4943";
   const pathname = useLocation().pathname;
 
@@ -35,16 +42,11 @@ const App = function () {
 
   // REGISTERING & CREATING ACTOR
   const verifyConnection = async () => {
-    // const connected = await window.ic.plug.isConnected();
-    // if (!connected) {
+    
     setActor(false);
     setIsConnected(false);
     await connecttion();
-    // } else {
-    //   console.log("connection already exists : verify connection ");
-    //   await createActor();
-    //   setIsConnected(true);
-    // }
+    
   };
   const onConnectionUpdate = () => {
     console.log(
@@ -63,13 +65,13 @@ const App = function () {
       if (publicKey) {
         setIsConnected(true);
         setPublicKey(publicKey);
-        const principalId = await window.ic.plug.agent.getPrincipal();
+        // const principalId = await window.ic.plug.agent.getPrincipal();
+        const principalId = window.ic.plug.sessionManager.sessionData.principalId;
+
         if (principalId) {
           console.log(`The connected user's principal id is:`, principalId);
           setPrincipalId(principalId);
         }
-        // Create an actor to interact with the NNS Canister
-        // we pass the NNS Canister id and the interface factory
       } else {
         setIsConnected(false);
       }
@@ -79,11 +81,34 @@ const App = function () {
   };
   const createActor = async () => {
     try {
+      let actors = [];
       const NNSUiActor = await window.ic.plug.createActor({
-        canisterId: nnsCanisterId,
-        interfaceFactory: idlFactory,
+        canisterId: canisterId1,
+        interfaceFactory: idlFactory1,
       });
+      setActor1(NNSUiActor);
+      actors.push(NNSUiActor);
+      var actor2 = await window.ic.plug.createActor({
+        canisterId: canisterId2,
+        interfaceFactory: idlFactory2,
+      });
+      actors.push(actor2);
+      setActor2(actor2)
+      var actor3 = await window.ic.plug.createActor({
+        canisterId: canisterId3,
+        interfaceFactory: idlFactory3,
+      });
+      actors.push(actor3);
+      setActor3(actor3)
+      var actor4 = await window.ic.plug.createActor({
+        canisterId: canisterIdLB,
+        interfaceFactory: idlFactoryLB,
+      });
+      actors.push(actor4);
+      setActorLB(actor4);
+
       setActor(NNSUiActor);
+      setActors(actors);
     } catch (ex) {
       console.log("Error while creating actor\n" + ex);
     }
@@ -92,7 +117,7 @@ const App = function () {
   // /*************INTERACTION WITH BC ****************/
   const verifyUser = async () => {
     if (isConnected) {
-      const isNew = await actor.isNewActor();
+      const isNew = await complaint_reg_v2_load_balancer.isNewActor(principalId);
       console.log(isNew);
       if (isNew[0]) {
         setIsNewUser(isNew);
@@ -132,7 +157,7 @@ const App = function () {
           {isConnected && isSetupComplete ? (
             isNewUser[0] && (
               <Registeration
-                actor={actor}
+                actors={actors}
                 principalId={principalId}
                 setIsNewUser={setIsNewUser}
               />

@@ -12,11 +12,16 @@
       "main": "src/complaint_reg_v2_backend_3/main.mo",
       "type": "motoko"
     },
+    "complaint_reg_v2_load_balancer": {
+      "main": "src/complaint_reg_v2_load_balancer/main.mo",
+      "type": "motoko"
+    },
     "complaint_reg_v2_frontend": {
       "dependencies": [
         "complaint_reg_v2_backend_1",
         "complaint_reg_v2_backend_2",
-        "complaint_reg_v2_backend_3"
+        "complaint_reg_v2_backend_3",
+        "complaint_reg_v2_load_balancer"
       ],
       "frontend": {
         "entrypoint": "src/complaint_reg_v2_frontend/src/index.html"
