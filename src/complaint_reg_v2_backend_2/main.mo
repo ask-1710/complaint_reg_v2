@@ -740,7 +740,7 @@ actor {
     policeList.put(caller, { name = name; designation = designation; activeComplaints = []; numSolvedCases = 0; numUnsolvedCases = 0 });
     return "Hii " # name # ", Police with principal " # Principal.toText(caller) # " has been created!";
   };
-  public shared ({ caller }) func addComplaint(title : Text, summary : Text, location : Text, date : Text) : async Bool {
+  public shared ({ caller }) func addComplaint(compId: Nat, title : Text, summary : Text, location : Text, date : Text) : async Bool {
     let mlResult = "Cognizable";
     var finalResult : Bool = false;
     var user = userList.get(caller);
@@ -751,7 +751,7 @@ actor {
         var currTime = Time.now();
         numComplaints := numComplaints +1;
         complaintList.put(
-          numComplaints,
+          compId,
           {
             title = title;
             summary = summary;
@@ -767,7 +767,7 @@ actor {
             updatedOn = Time.now();
           },
         );
-        oldComplaints := Array.append(oldComplaints, [numComplaints]);
+        oldComplaints := Array.append(oldComplaints, [compId]);
         var newUser : User = {
           name = obj.name;
           address = obj.address;

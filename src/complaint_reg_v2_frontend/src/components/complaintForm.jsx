@@ -1,8 +1,9 @@
 import DatePicker from "react-date-picker";
 import React, { useState } from "react";
 import { Card } from "../../../../node_modules/react-bootstrap/esm/index";
+import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
 
-const ComplaintForm = ({createActor, actor}) => {
+const ComplaintForm = ({createActor, actors}) => {
   const [newComplaint, setNewComplaint] = useState({
     title: "",
     summary: "",
@@ -15,12 +16,18 @@ const ComplaintForm = ({createActor, actor}) => {
 
 
   async function submitComplaint() {
-    console.log(actor);
+    console.log(actors);
     console.log(newComplaint);
-    const isCreated = await actor.addComplaint(newComplaint.title, newComplaint.summary, newComplaint.location, newComplaint.date.toString());
+    const principalId = window.ic.plug.sessionManager.sessionData.principalId;
+    const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId)
+    console.log("mapped canister: " + mappedCanister);
+    const actor = actors[mappedCanister];
+    const complaintId = await complaint_reg_v2_load_balancer.getComplaintId();
+    const isCreated = await actor.addComplaint(complaintId, newComplaint.title, newComplaint.summary, newComplaint.location, newComplaint.date.toString());
     if(isCreated) {
         console.log("Complaint Created");
         setComplaintCreated(true);
+        await complaint_reg_v2_load_balancer.mapComplaintToCanister(complaintId, mappedCanister);
     } else {
         setComplaintCreated(false);
         console.log("Error while creating complaint");

@@ -17,7 +17,9 @@ import Time "mo:base/Time";
 actor {
   
   let userCanisterMapping : HashMap.HashMap<Principal, (Nat, Text)> = HashMap.HashMap(32, Principal.equal, Principal.hash); // maps user principal to canister num
+  let complaintCanisterMapping: HashMap.HashMap<Nat, Nat> = HashMap.HashMap(32, Nat.equal, Hash.hash); // maps complaint id to canister num
   var canisterNum = 0;
+  var numComplaint = 0;
   
 
     /*************************** HASHED CANISTER CALL ****************************/
@@ -53,9 +55,16 @@ actor {
           return n.0;
         };
       }
+    };
 
-      
-    }
+    public shared func getComplaintId() : async Nat {
+      numComplaint := numComplaint + 1;
+      return numComplaint;
+    };
+
+    public shared func mapComplaintToCanister(complaintId: Nat, canisterNum: Nat) : async () {
+      complaintCanisterMapping.put(complaintId, canisterNum);
+    };
 
     /*************************** HASHED CANISTER CALL ****************************/
 };

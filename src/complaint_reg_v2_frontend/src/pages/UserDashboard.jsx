@@ -3,9 +3,10 @@ import Spinner from "react-bootstrap/Spinner";
 import { Badge } from "react-bootstrap";
 import { useLocation, useNavigate } from "react-router-dom";
 import ComplaintForm from "../components/complaintForm";
+import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
 
 const UserDashboard = ({
-  actor,
+  actors,
   setIsConnected,
   createActor,
   setIsNewUser,
@@ -27,23 +28,28 @@ const UserDashboard = ({
     unsolved: { step: 5, badgeText: "Unsolved" },
   };
 
-  const location = useLocation();
-  const { principalId } = location?.state || {};
-  const { isConnected } = location?.state || {};
+  // const location = useLocation();
+  // const { principalId } = location?.state || {};
+  // const { isConnected } = location?.state || {};
 
   useEffect(() => {
     setIsSetupComplete(true);
     setIsNewUser(false, "user");
     setIsConnected(true);
-    if (actor == "") createActor();
+    if (actors == null || actors.length>0) createActor();
   }, []);
 
   useEffect(() => {
-    if (!isUserSet && actor != "") getUserDetails();
-  }, [actor]);
+    if (!isUserSet && (actors!==null && actors.length>0)) getUserDetails();
+  }, [actors]);
 
   async function getUserDetails() {
     // console.log("user is :"+principalId+":getUserDetails");
+    const principalId = window.ic.plug.sessionManager.sessionData.principalId;
+    const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId);
+    console.log("mapped canister: " + mappedCanister);
+
+    const actor = actors[mappedCanister];
     const user = await actor.getUserDetails();
     const userComplaints = await actor.getUserComplaints();
 
@@ -168,7 +174,7 @@ const UserDashboard = ({
             <div id="anchor" className="new-section-container">
               <div className="new-section-center">
                 <div className="mb-5">
-                  <ComplaintForm actor={actor} createActor={createActor} />
+                  <ComplaintForm actors={actors} createActor={createActor} />
                 </div>
                 <div className="mt-4 d-flex flex-row-reverse">
                   <button

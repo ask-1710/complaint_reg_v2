@@ -192,7 +192,7 @@ const App = function () {
               setIsConnected={setIsConnected}
               createActor={createActor}
               setIsNewUser={setIsNewUser}
-              actor={actor}
+              actors={actors}
               setIsSetupComplete={setIsSetupComplete}
             />
           }
