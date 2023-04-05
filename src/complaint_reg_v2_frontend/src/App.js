@@ -214,7 +214,7 @@ const App = function () {
           element={
             <ComplaintView
               createActor={createActor}
-              actor={actor}
+              actors={actors}
               setIsConnected={setIsConnected}
               setIsSetupComplete={setIsSetupComplete}
               setIsNewUser={setIsNewUser}

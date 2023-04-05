@@ -66,5 +66,17 @@ actor {
       complaintCanisterMapping.put(complaintId, canisterNum);
     };
 
+    public shared func getCanisterByComplaintID(complaintId: Nat) : async Nat {
+      let canister = complaintCanisterMapping.get(complaintId);
+      switch(canister) {
+        case null {
+          return 0;
+        };
+        case (?canstr) {
+          return canstr;
+        };
+      };
+    };
+
     /*************************** HASHED CANISTER CALL ****************************/
 };

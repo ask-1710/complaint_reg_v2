@@ -3,10 +3,11 @@ import { Route, Routes, useLocation, useParams } from "react-router-dom";
 import Spinner from "react-bootstrap/Spinner";
 import FileFrame from "../components/fileFrame";
 import { Link } from "react-router-dom";
+import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
 
 const ComplaintView = ({
   createActor,
-  actor,
+  actors,
   setIsSetupComplete,
   setIsConnected,
   setIsNewUser,
@@ -32,15 +33,17 @@ const ComplaintView = ({
     setIsSetupComplete(true);
     setIsNewUser(false, userType);
     setIsConnected(true);
-    if (actor == "") createActor();
+    if (actors == null || actors.length>0) createActor();
   }, []);
 
   useEffect(() => {
-    if (actor != "") getDetailedComplaintInfo();
-  }, [actor]);
+    if (actors == null || actors.length>0) getDetailedComplaintInfo();
+  }, [actors]);
 
   const getDetailedComplaintInfo = async () => {
     console.log("Inside getDetailedComplaintInfo");
+    const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(parseInt(complaintId));
+    var actor = actors[mappedCanister];
     var complaintInfo = await actor.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
     setComplaintInfo(complaintInfo);
     var toDate = new Date(complaintInfo.date);
@@ -153,7 +156,7 @@ const ComplaintView = ({
       )}
 
       <Routes>
-        <Route path={`:cid`} element={<FileFrame createActor={createActor} actor={actor}/>} />
+        <Route path={`:cid`} element={<FileFrame createActor={createActor} actors={actors}/>} />
       </Routes>
     </div>
   );
