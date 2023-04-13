@@ -14,7 +14,7 @@ import Error "mo:base/Error";
 import Time "mo:base/Time";
 
 
-actor {
+actor Actor3 {
   
   type StatusText = {
     #firregisteration; // requires /*complaint basic*/ info
@@ -37,6 +37,7 @@ actor {
     closureReport : Text; // CID
     complainantPrincipal: Principal;
     updatedOn: Time.Time;
+    investigatorPrincipal: Principal;
   };
 
   public type Role = {
@@ -217,28 +218,53 @@ actor {
   private func transferEvidenceOwnership(principal : Principal, complaintId : Nat) : async Bool {
     // principal of new investigator
     try {
+      var complaint = complaintList.get(complaintId);
+      switch(complaint) {
+        case null { return false; };
+        case (?oldComplaint) {
+          var newComplaint = {
+            title = oldComplaint.title;
+            summary = oldComplaint.summary;
+            FIR = oldComplaint.FIR;
+            chargesheet = oldComplaint.chargesheet;
+            closureReport = oldComplaint.closureReport;
+            date = oldComplaint.date;
+            evidence = oldComplaint.evidence;
+            location = oldComplaint.location;
+            status = oldComplaint.status;
+            typee = "cognizable";
+            complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
+            investigatorPrincipal = principal;
+          };
+          complaintList.put(complaintId, newComplaint);
+        };
+      };
       var pastOwners = complaintOwnership.get(complaintId);
       switch (pastOwners) {
         case (null) {
           complaintOwnership.put(complaintId, [principal]);
-          return await transferActiveCases(null, principal, complaintId);
+          Debug.print("assigned case ownership");
+          return true;
+          // return await transferActiveCases(null, principal, complaintId);
         };
         case (?arr) {
           var numOwners = arr.size();
           var latestOwner = arr[numOwners -1];
-          var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
-          if(result!=false) return false;
+          // var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
+          // if(result!=false) return false;
           let newArray = Array.append<Principal>(arr, [principal]);
           complaintOwnership.put(complaintId, newArray);
+          Debug.print("transferred case ownership");
           return true;
         };
       };
     } catch(err) {
+      Debug.print("error while transfering ownership");
       return false;
     };
-    return true;
   };
-  
+
 
   private func textToStatusVariant(status: Text): StatusText {
     switch(status) {
@@ -440,7 +466,7 @@ actor {
       currentInchargeDesig = "";
       assignedStation = "";
       assignedStationCode = "";
-      ownershipHistory = [getDummyPolice()];
+      ownershipHistory = []; // TO
       complainantName = "";
       complainantAddress = "";
       updatedOn = Time.now();
@@ -522,6 +548,7 @@ actor {
       closureReport = "NONE";
       complainantPrincipal = caller;
       updatedOn=Time.now();
+      investigatorPrincipal=caller;
     };
     let dummyComplaintId: Nat = 0;
     switch (userObj) {
@@ -690,13 +717,14 @@ actor {
     switch(police) {
       case null { return false ;};
       case (?pol) {
-        var assignedComplaints = pol.activeComplaints;
-        for(idx in Iter.range(0, assignedComplaints.size()-1)) {
-          var currComplaint = assignedComplaints[idx];
-          if(currComplaint == complaintId) {
-            return true;
-          }
-        };
+        var ownershipHistory: ?[Principal] = complaintOwnership.get(complaintId);
+        switch(ownershipHistory) {
+          case (null) {return false;};
+          case (?history) {
+            var currentIncharge: Principal = history[history.size()-1];
+            if(currentIncharge == caller) return true;
+          };
+        };        
         return false;
       };
     };
@@ -765,6 +793,7 @@ actor {
             closureReport = "NONE";
             complainantPrincipal = caller;
             updatedOn = Time.now();
+            investigatorPrincipal=caller;
           },
         );
         oldComplaints := Array.append(oldComplaints, [compId]);
@@ -785,10 +814,33 @@ actor {
     assignedRoles.put(principal, actualRole);
   };
   public shared ({ caller }) func transferOwnershipTo(complaintId : Nat, newPolice: Text) : async Bool {
-    if(canTransferEvidence(caller)) {
-      return await transferEvidenceOwnership(Principal.fromText(newPolice), complaintId); // WARNING : calling another function to update
-    };
-    return false;
+    // if(canTransferEvidence(caller)) {
+    return await transferEvidenceOwnership(Principal.fromText(newPolice), complaintId);
+    // };
+    // return false;
+    // try {
+    //   var pastOwners = complaintOwnership.get(complaintId);
+    //   switch (pastOwners) {
+    //     case (null) {
+    //       complaintOwnership.put(complaintId, [Principal.fromText(newPolice)]);
+    //       Debug.print("assigned case ownership");
+    //       return true;
+    //       // return await transferActiveCases(null, principal, complaintId);
+    //     };
+    //     case (?arr) {
+    //       // var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
+    //       // if(result!=false) return false;
+    //       let newArray = Array.append<Principal>(arr, [Principal.fromText(newPolice)]);
+    //       complaintOwnership.put(complaintId, newArray);
+    //       Debug.print("transferred case ownership");
+    //       return true;
+    //     };
+    //   };
+    // } catch(err) {
+    //   Debug.print("error while transfering ownership");
+    //   return false;
+    // };
+
   };
   public shared ({ caller }) func updateComplaintStatus(complaintId: Nat, status: Text) : async Bool {
     var variantStatus = status;
@@ -812,6 +864,7 @@ actor {
             typee = "cognizable";
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            investigatorPrincipal=oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
           return true;
@@ -844,6 +897,7 @@ actor {
             closureReport = oldComplaint.closureReport; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -943,6 +997,7 @@ actor {
             closureReport = oldComplaint.closureReport; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -998,6 +1053,7 @@ actor {
             closureReport = oldComplaint.closureReport; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -1053,6 +1109,7 @@ actor {
             closureReport = fileCID; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -1089,6 +1146,7 @@ actor {
     };
     return false;
   };
+  
 
 
 
