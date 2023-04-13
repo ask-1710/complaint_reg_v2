@@ -187,6 +187,7 @@ const PoliceDashboard = ({
     eccrypto.encrypt(polPubKey, aesSymmetricKey).then(async function(encrypted) {
       const encStringified = JSON.stringify(encrypted);
       // store encrypted aes key
+      let someRes = await complaint_reg_v2_load_balancer.addFileOwnerAndGetCanisterId(fileCID, principalId, complaintId)
       let result;
       if(document=="FIR") result = await actor.addFIR(complaintId, fileCID, encStringified, "");
       else if(document == "chargesheet") result = await actor.addChargesheet(complaintId, fileCID, encStringified, "");
