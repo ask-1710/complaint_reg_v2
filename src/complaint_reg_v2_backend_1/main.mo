@@ -81,6 +81,7 @@ actor Actor3 {
     evidence : [Text]; // CIDs
     status : StatusText;
     FIR : Text; // CID - step1
+    complainantPrincipal: Text;
     chargesheet : Text; // CID
     closureReport : Text; // CID
     assignedStation: Text;
@@ -465,6 +466,7 @@ actor Actor3 {
       assignedStationCode = "";
       ownershipHistory = []; // TO
       complainantName = "";
+      complainantPrincipal = "";
       investigatorPrincipal = "";
       complainantAddress = "";
       updatedOn = Time.now();
@@ -631,6 +633,7 @@ actor Actor3 {
           title = info.title;
           complainantName = complainantName;
           complainantAddress = complainantAddress;
+          complainantPrincipal = Principal.toText(info.complainantPrincipal);
           updatedOn = info.updatedOn;
         };    
         return complaintView;    
@@ -952,8 +955,8 @@ actor Actor3 {
   public shared ({ caller }) func provideAccessToFile(principalText: Text, cid: Text, newKey: Text) : async Bool {
     let principal = Principal.fromText(principalText);
     
-    // let isOwner:Bool = isFileOwner(caller, cid);
-    // if(isOwner) {
+    let isOwner:Bool = isFileOwner(caller, cid);
+    if(isOwner) {
         var oldRequests = userFileAccessRequests.get(cid);
         switch (oldRequests) {
           case (?oldR) {
@@ -975,9 +978,9 @@ actor Actor3 {
           };
           case (null) {return false;};
         };
-    // } else {
-    //   return false;
-    // }
+    } else {
+      return false;
+    }
   };
   public shared ({ caller }) func addFIR(complaintId: Nat, fileCID: Text, encAESKey: Text, AESiv: Text): async Bool {
     var complaintObj = complaintList.get(complaintId);

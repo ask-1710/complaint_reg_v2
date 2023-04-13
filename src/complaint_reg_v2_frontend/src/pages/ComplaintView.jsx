@@ -117,7 +117,7 @@ const ComplaintView = ({
               <p><strong>Elaborated description</strong><br/>{complaintInfo.summary}</p>
               <p><strong>Last updated on: </strong>{new Date(Number(complaintInfo.updatedOn)/1000000).toString()}</p>
               {
-                complaintInfo.investigatorPrincipal!=principal ? (
+                complaintInfo.investigatorPrincipal!=complaintInfo.complainantPrincipal ? (
                   <>
                     <p><strong>Complaint assigned and investigation started</strong></p>
                     <p><strong>Police Station:</strong> E5 - Police Station in R.A. Puram, Chennai-600028 </p><br/>

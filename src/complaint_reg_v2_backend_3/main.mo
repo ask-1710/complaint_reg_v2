@@ -81,6 +81,7 @@ actor Actor3 {
     evidence : [Text]; // CIDs
     status : StatusText;
     FIR : Text; // CID - step1
+    complainantPrincipal: Text;
     chargesheet : Text; // CID
     closureReport : Text; // CID
     assignedStation: Text;
@@ -465,6 +466,7 @@ actor Actor3 {
       assignedStationCode = "";
       ownershipHistory = []; // TO
       complainantName = "";
+      complainantPrincipal = "";
       investigatorPrincipal = "";
       complainantAddress = "";
       updatedOn = Time.now();
@@ -631,6 +633,7 @@ actor Actor3 {
           title = info.title;
           complainantName = complainantName;
           complainantAddress = complainantAddress;
+          complainantPrincipal = Principal.toText(info.complainantPrincipal);
           updatedOn = info.updatedOn;
         };    
         return complaintView;    
