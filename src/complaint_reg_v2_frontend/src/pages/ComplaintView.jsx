@@ -19,6 +19,8 @@ const ComplaintView = ({
   const [isLoading, setIsLoading] = useState(true);
   const [complaintInfo, setComplaintInfo] = useState(null);
   const [registeredDaysBefore, setRegisteredDaysBefore] = useState(null);
+  const [hasLoadedInfo, setHasLoadedInfo] = useState(false);
+  const [principal, setPrincipal] = useState("")
   const { complaintId } = useParams();
   const location = useLocation();
   const userType = location?.state?.userType;
@@ -36,21 +38,15 @@ const ComplaintView = ({
     setIsSetupComplete(true);
     setIsNewUser(false, userType);
     setIsConnected(true);
-    if (!actor) createActor1();
+    if(actor == "") createActor();
+    if(!hasLoadedInfo) getDetailedComplaintInfo(); 
   }, []);
-
-  useEffect(() => {
-    if (actor) getDetailedComplaintInfo();
-  }, [actor]);
 
   const getDetailedComplaintInfo = async () => {
     console.log("Inside getDetailedComplaintInfo");
-    const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(parseInt(complaintId));
-    
-    if(mappedCanister == 0) await createActor1();
-    else if(mappedCanister == 1) await createActor2();
-    else if(mappedCanister == 2) await createActor3();
-    
+    if(actor == "")  await createActor();
+    const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
+    setPrincipal(principal);
     var complaintInfo = await actor.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
     setComplaintInfo(complaintInfo);
     var toDate = new Date(complaintInfo.date);
@@ -59,8 +55,17 @@ const ComplaintView = ({
     console.log(differenceInDays);
     setRegisteredDaysBefore(differenceInDays.toString());
     setIsLoading(false);
+    setHasLoadedInfo(true);
     console.log(complaintInfo);
   };
+
+  const createActor = async () => {
+    const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(parseInt(complaintId));
+    
+    if(mappedCanister == 0) await createActor1();
+    else if(mappedCanister == 1) await createActor2();
+    else if(mappedCanister == 2) await createActor3();
+  }
 
   function getFIRDate() {
     var lastDate;
@@ -112,10 +117,9 @@ const ComplaintView = ({
               <p><strong>Elaborated description</strong><br/>{complaintInfo.summary}</p>
               <p><strong>Last updated on: </strong>{new Date(Number(complaintInfo.updatedOn)/1000000).toString()}</p>
               {
-                complaintInfo.currentInchargeName != "no-police" ? (
+                complaintInfo.investigatorPrincipal!=principal ? (
                   <>
-                    <p><strong>Incharge Details</strong></p>
-                    <p><strong>Investigator: </strong>{complaintInfo.currentInchargeName +" , " +complaintInfo.currentInchargeDesig}</p>
+                    <p><strong>Complaint assigned and investigation started</strong></p>
                     <p><strong>Police Station:</strong> E5 - Police Station in R.A. Puram, Chennai-600028 </p><br/>
                     <p className="my-2"><strong>Status : </strong>{ possibleStages[Object.keys(complaintInfo.status)[0]].badgeText }</p><br />
                     <p><strong>All related case documents </strong></p>

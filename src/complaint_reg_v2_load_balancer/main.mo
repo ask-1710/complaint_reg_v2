@@ -18,11 +18,12 @@ actor {
   
   let userCanisterMapping : HashMap.HashMap<Principal, (Nat, Text)> = HashMap.HashMap(32, Principal.equal, Principal.hash); // maps user principal to canister num
   let complaintCanisterMapping: HashMap.HashMap<Nat, Nat> = HashMap.HashMap(32, Nat.equal, Hash.hash); // maps complaint id to canister num
+  let fileCIDOwnerMapping: HashMap.HashMap<Text, (Text, Nat)> = HashMap.HashMap(32, Text.equal, Text.hash); // maps file CID to canister num
   var canisterNum = 0;
   var numComplaint = 0;
-  let Actor1 = actor("rkp4c-7iaaa-aaaaa-aaaca-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
-  let Actor2 = actor("rno2w-sqaaa-aaaaa-aaacq-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
-  let Actor3 = actor("renrk-eyaaa-aaaaa-aaada-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
+  let Actor1 = actor("rrkah-fqaaa-aaaaa-aaaaq-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
+  let Actor2 = actor("ryjl3-tyaaa-aaaaa-aaaba-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
+  let Actor3 = actor("r7inp-6aaaa-aaaaa-aaabq-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
 
   let actors = [Actor1, Actor2, Actor3];
   
@@ -102,5 +103,28 @@ actor {
       return res;
     };
 
+    public shared func addFileOwnerAndGetCanisterId(cid: Text, principal: Text, complaintId: Nat) : async () {
+      fileCIDOwnerMapping.put(cid, (principal, complaintId));
+    };
+
+    public query func getFileOwner(cid: Text) : async (Text, Nat) {  // return file owner, complaint canister
+      let fileDetails = fileCIDOwnerMapping.get(cid);
+      switch(fileDetails){
+        case null {
+          return ("",0);
+        };
+        case (?details) {
+          var canisterMapping = complaintCanisterMapping.get(details.1);
+          switch(canisterMapping) {
+            case null {
+              return (details.0, 0);
+            };
+            case (?canister) {
+              return (details.0, canister);
+            };
+          }
+        };
+      } 
+    };
     /*************************** HASHED CANISTER CALL ****************************/
 };

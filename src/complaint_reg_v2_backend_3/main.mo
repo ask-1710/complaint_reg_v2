@@ -83,11 +83,10 @@ actor Actor3 {
     FIR : Text; // CID - step1
     chargesheet : Text; // CID
     closureReport : Text; // CID
-    currentInchargeName: Text;
-    currentInchargeDesig: Text;
     assignedStation: Text;
     assignedStationCode: Text;
-    ownershipHistory: [Police]; 
+    investigatorPrincipal: Text;
+    ownershipHistory: [Principal]; 
     complainantName: Text;
     updatedOn: Time.Time;
     complainantAddress: Text;  
@@ -264,7 +263,7 @@ actor Actor3 {
       return false;
     };
   };
-  
+
 
   private func textToStatusVariant(status: Text): StatusText {
     switch(status) {
@@ -462,12 +461,11 @@ actor Actor3 {
       FIR = ""; // CID - step1
       chargesheet = ""; // CID
       closureReport = ""; // CID
-      currentInchargeName = "";
-      currentInchargeDesig = "";
       assignedStation = "";
       assignedStationCode = "";
-      ownershipHistory = [];
+      ownershipHistory = []; // TO
       complainantName = "";
+      investigatorPrincipal = "";
       complainantAddress = "";
       updatedOn = Time.now();
     };
@@ -600,8 +598,12 @@ actor Actor3 {
         return getDummyComplaintView();
       };
       case (?info) {
-        var ownershipHistory: [Police] = getComplaintOwnershipHistoryPriv(complaintId);
-        var currentIncharge: Police = ownershipHistory[ownershipHistory.size()-1];
+        var ownershipHistory: [Principal] = [];
+        var ownershipHistory1 = complaintOwnership.get(complaintId);
+        switch(ownershipHistory1) {
+          case null { };
+          case (?oh) { ownershipHistory := oh; };
+        };
         var complainant: ?User = userList.get(info.complainantPrincipal);
         var complainantName = "";
         var complainantAddress = "";
@@ -618,8 +620,7 @@ actor Actor3 {
           closureReport = info.closureReport;
           assignedStation = "";
           assignedStationCode = "";
-          currentInchargeDesig = currentIncharge.designation;
-          currentInchargeName = currentIncharge.name;
+          investigatorPrincipal = Principal.toText(info.investigatorPrincipal);
           date = info.date;
           evidence = info.evidence;
           location = info.location;
@@ -664,8 +665,8 @@ actor Actor3 {
   };
   public query ({ caller }) func getFileAccessRequests(cid: Text) : async [(Text, FileRequestor)] {
     var dummyUsers: [(Text, FileRequestor)] = [("", {category="";name=""})];
-    let isOwner = isFileOwner(caller, cid);
-    if(isOwner) {
+    // let isOwner = isFileOwner(caller, cid);
+    // if(isOwner) {
       var requestsForCID: ?[Principal] = userFileAccessRequests.get(cid);
       switch(requestsForCID) {
         case(null) {
@@ -699,9 +700,9 @@ actor Actor3 {
           return Iter.toArray<(Text, FileRequestor)>(userPrincipalList.entries()); // length == 0, no data but user is owner , len >= 1, owner and data exist
         };
       };
-    } else {
-      return dummyUsers; // length == 1, not owner;
-    }
+    // } else {
+    //   return dummyUsers; // length == 1, not owner;
+    // }
   };
   public query func getFileAccessRequestsToTest(cid: Text) : async [Text] {
     let principals = userFileAccessRequests.get(cid);
