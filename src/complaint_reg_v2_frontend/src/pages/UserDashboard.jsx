@@ -8,7 +8,10 @@ import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_
 const UserDashboard = ({
   actors,
   setIsConnected,
-  createActor,
+  createActor1,
+  actor,
+  createActor2,
+  createActor3,
   setIsNewUser,
   setIsSetupComplete,
 }) => {
@@ -36,12 +39,12 @@ const UserDashboard = ({
     setIsSetupComplete(true);
     setIsNewUser(false, "user");
     setIsConnected(true);
-    if (actors == null || actors.length>0) createActor();
+    createActor1();
   }, []);
 
   useEffect(() => {
-    if (!isUserSet && (actors!==null && actors.length>0)) getUserDetails();
-  }, [actors]);
+    if (!isUserSet && actor) getUserDetails();
+  }, [actor]);
 
   async function getUserDetails() {
     // console.log("user is :"+principalId+":getUserDetails");
@@ -49,7 +52,10 @@ const UserDashboard = ({
     const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId);
     console.log("mapped canister: " + mappedCanister);
 
-    const actor = actors[mappedCanister];
+    if(mappedCanister == 0) await createActor1();
+    else if(mappedCanister == 1) await createActor2();
+    else if(mappedCanister == 2) await createActor3();
+    
     const user = await actor.getUserDetails();
     const userComplaints = await actor.getUserComplaints();
 
@@ -174,7 +180,7 @@ const UserDashboard = ({
             <div id="anchor" className="new-section-container">
               <div className="new-section-center">
                 <div className="mb-5">
-                  <ComplaintForm actors={actors} createActor={createActor} />
+                  <ComplaintForm actors={actors} actor={actor} createActor1={createActor1} createActor2={createActor2} createActor3={createActor3} />
                 </div>
                 <div className="mt-4 d-flex flex-row-reverse">
                   <button

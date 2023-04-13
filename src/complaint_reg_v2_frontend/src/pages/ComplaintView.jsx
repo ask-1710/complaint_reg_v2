@@ -6,7 +6,10 @@ import { Link } from "react-router-dom";
 import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
 
 const ComplaintView = ({
-  createActor,
+  createActor1,
+  createActor2,
+  createActor3,
+  actor,
   actors,
   setIsSetupComplete,
   setIsConnected,
@@ -33,17 +36,21 @@ const ComplaintView = ({
     setIsSetupComplete(true);
     setIsNewUser(false, userType);
     setIsConnected(true);
-    if (actors == null || actors.length>0) createActor();
+    if (!actor) createActor1();
   }, []);
 
   useEffect(() => {
-    if (actors == null || actors.length>0) getDetailedComplaintInfo();
-  }, [actors]);
+    if (actor) getDetailedComplaintInfo();
+  }, [actor]);
 
   const getDetailedComplaintInfo = async () => {
     console.log("Inside getDetailedComplaintInfo");
     const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(parseInt(complaintId));
-    var actor = actors[mappedCanister];
+    
+    if(mappedCanister == 0) await createActor1();
+    else if(mappedCanister == 1) await createActor2();
+    else if(mappedCanister == 2) await createActor3();
+    
     var complaintInfo = await actor.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
     setComplaintInfo(complaintInfo);
     var toDate = new Date(complaintInfo.date);
@@ -156,7 +163,7 @@ const ComplaintView = ({
       )}
 
       <Routes>
-        <Route path={`:cid`} element={<FileFrame createActor={createActor} actors={actors}/>} />
+        <Route path={`:cid`} element={<FileFrame createActor1={createActor1} createActor2={createActor2} createActor3={createActor3} actor={actor} actors={actors}/>} />
       </Routes>
     </div>
   );

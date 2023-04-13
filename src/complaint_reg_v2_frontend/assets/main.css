@@ -182,6 +182,10 @@ body {
         
   }
 
+  .float-right{
+    float: right;
+  }
+
   /* The typing effect */
   @keyframes typing {
     from { width: 0 }

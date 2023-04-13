@@ -8,7 +8,7 @@ var eccrypto = require("eccrypto");
 const CryptoJS = require("crypto-js")
 
 
-const Registeration = ({ actors, principalId , setIsNewUser }) => {
+const Registeration = ({ actor, actors, principalId , setIsNewUser , createActor1, createActor2, createActor3}) => {
   const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "", emailID: "" });
   const [policeInfo, setPoliceInfo] = useState({
     name: "",
@@ -32,10 +32,11 @@ const Registeration = ({ actors, principalId , setIsNewUser }) => {
     localStorage.setItem(principalText, encPrivKey);
     const pubKey = eccrypto.getPublic(privKey);
     const mappedCanisterId = await complaint_reg_v2_load_balancer.mapUserToCanister(principalText, "user");
-    let actorOfCanisterId = actors[mappedCanisterId]; // actors is an array of actors created for all canisters
-    console.log(actorOfCanisterId);
-    console.log(mappedCanisterId);
-    const createdUserResp = await actorOfCanisterId.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public key
+    if(mappedCanisterId == 0) await createActor1();
+    else if(mappedCanisterId == 1) await createActor2();
+    else if(mappedCanisterId == 2) await createActor3();
+
+    const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public key
     console.log(createdUserResp);
     setIsNewUser(false)
     navigate("/userdashboard", { state: { principalId , isConnected: true } });
@@ -48,8 +49,10 @@ const Registeration = ({ actors, principalId , setIsNewUser }) => {
     localStorage.setItem(principalText, encPrivKey);
     const pubKey = eccrypto.getPublic(privKey);
     const mappedCanisterId = await complaint_reg_v2_load_balancer.mapUserToCanister(principalText, "police");
-    let actorOfCanisterId = actors[mappedCanisterId]; // actors is an array of actors created for all canisters
-    const createdPoliceResp = await actorOfCanisterId.addPolice(
+    if(mappedCanisterId == 0) await createActor1();
+    else if(mappedCanisterId == 1) await createActor2();
+    else if(mappedCanisterId == 2) await createActor3();    
+    const createdPoliceResp = await actor.addPolice(
       policeInfo.name,
       policeInfo.designation,
       policeInfo.role,

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Card } from "../../../../node_modules/react-bootstrap/esm/index";
 import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
 
-const ComplaintForm = ({createActor, actors}) => {
+const ComplaintForm = ({createActor, actors, actor, createActor1, createActor2, createActor3}) => {
   const [newComplaint, setNewComplaint] = useState({
     title: "",
     summary: "",
@@ -21,7 +21,11 @@ const ComplaintForm = ({createActor, actors}) => {
     const principalId = window.ic.plug.sessionManager.sessionData.principalId;
     const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId)
     console.log("mapped canister: " + mappedCanister);
-    const actor = actors[mappedCanister];
+    
+    if(mappedCanister == 0) await createActor1();
+    else if(mappedCanister == 1) await createActor2();
+    else if(mappedCanister == 2) await createActor3();
+    
     const complaintId = await complaint_reg_v2_load_balancer.getComplaintId();
     const isCreated = await actor.addComplaint(complaintId, newComplaint.title, newComplaint.summary, newComplaint.location, newComplaint.date.toString());
     if(isCreated) {
