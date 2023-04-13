@@ -20,8 +20,12 @@ actor {
   let complaintCanisterMapping: HashMap.HashMap<Nat, Nat> = HashMap.HashMap(32, Nat.equal, Hash.hash); // maps complaint id to canister num
   var canisterNum = 0;
   var numComplaint = 0;
-  
+  let Actor1 = actor("rkp4c-7iaaa-aaaaa-aaaca-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
+  let Actor2 = actor("rno2w-sqaaa-aaaaa-aaacq-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
+  let Actor3 = actor("renrk-eyaaa-aaaaa-aaada-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
 
+  let actors = [Actor1, Actor2, Actor3];
+  
     /*************************** HASHED CANISTER CALL ****************************/
 
     // QUERY CALLS
@@ -76,6 +80,26 @@ actor {
           return canstr;
         };
       };
+    };
+
+    public shared func assignComplaint(complaintId: Nat, policePrincipalText: Text) : async Bool {
+      var policePrincipal = Principal.fromText(policePrincipalText);
+      var canisterNum = complaintCanisterMapping.get(complaintId);
+      var actorNum = 0;
+      switch(canisterNum) {
+        case null {};
+        case (?canNum) { actorNum := canNum ; };
+      };
+      var canister = actors[actorNum];
+      Debug.print("Actor of complaint" # Nat.toText(actorNum));
+      var res = false;
+      try {
+        res :=  await canister.transferOwnershipTo(complaintId, policePrincipalText);      
+      } catch(err) {
+        Debug.print("LB: Error occured in calling transferOwnership function ")
+      };
+      
+      return res;
     };
 
     /*************************** HASHED CANISTER CALL ****************************/
