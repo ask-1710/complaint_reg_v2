@@ -18,10 +18,6 @@ const App = function () {
   const [principalId, setPrincipalId] = useState("");
   const [publicKey, setPublicKey] = useState("");
   const [isSetupComplete, setIsSetupComplete] = useState(false);
-  const [actor1, setActor1] = useState("")
-  const [actor2, setActor2] = useState("")
-  const [actor3, setActor3] = useState("")
-  const [actorLB, setActorLB] = useState("")
   const [isNewUser, setIsNewUser] = useState([true, ""]);
   const [actors, setActors] = useState([]);
   const navigate = useNavigate();
@@ -34,7 +30,7 @@ const App = function () {
   const pathname = useLocation().pathname;
 
   useEffect(() => {
-    if (isConnected) createActor1();
+    if (isConnected && actor=="") createActor1();
   }, [isConnected]);
 
   useEffect(() => {
