@@ -28,12 +28,13 @@ const App = function () {
   
 
 
-  const whitelist = [canisterId1, canisterId2, canisterId3, canisterIdLB];
+  const whitelist = [process.env.COMPLAINT_REG_V2_BACKEND_1_CANISTER_ID, process.env.COMPLAINT_REG_V2_BACKEND_2_CANISTER_ID, process.env.COMPLAINT_REG_V2_BACKEND_3_CANISTER_ID, process.env.COMPLAINT_REG_V2_LOAD_BALANCER_CANISTER_ID];
+  console.log(whitelist);
   const host = "http://127.0.0.1:4943";
   const pathname = useLocation().pathname;
 
   useEffect(() => {
-    if (isConnected) createActor();
+    if (isConnected) createActor1();
   }, [isConnected]);
 
   useEffect(() => {
@@ -79,40 +80,41 @@ const App = function () {
       console.log(e);
     }
   };
-  const createActor = async () => {
+  const createActor1 = async () => {
     try {
-      let actors = [];
       const NNSUiActor = await window.ic.plug.createActor({
-        canisterId: canisterId1,
+        canisterId: process.env.COMPLAINT_REG_V2_BACKEND_1_CANISTER_ID,
         interfaceFactory: idlFactory1,
       });
-      setActor1(NNSUiActor);
-      actors.push(NNSUiActor);
-      var actor2 = await window.ic.plug.createActor({
-        canisterId: canisterId2,
-        interfaceFactory: idlFactory2,
-      });
-      actors.push(actor2);
-      setActor2(actor2)
-      var actor3 = await window.ic.plug.createActor({
-        canisterId: canisterId3,
-        interfaceFactory: idlFactory3,
-      });
-      actors.push(actor3);
-      setActor3(actor3)
-      var actor4 = await window.ic.plug.createActor({
-        canisterId: canisterIdLB,
-        interfaceFactory: idlFactoryLB,
-      });
-      actors.push(actor4);
-      setActorLB(actor4);
-
       setActor(NNSUiActor);
-      setActors(actors);
     } catch (ex) {
       console.log("Error while creating actor\n" + ex);
     }
   };
+  const createActor2 = async () => {
+    var actor2 = await window.ic.plug.createActor({
+      canisterId: process.env.COMPLAINT_REG_V2_BACKEND_2_CANISTER_ID,
+      interfaceFactory: idlFactory2,
+    });
+    actors.push(actor2);
+    setActor(actor2)
+  }
+  const createActor3 = async () => {
+    var actor3 = await window.ic.plug.createActor({
+      canisterId: process.env.COMPLAINT_REG_V2_BACKEND_3_CANISTER_ID,
+      interfaceFactory: idlFactory3,
+    });
+    actors.push(actor3);
+    setActor(actor3)
+  }
+  const createActorLB = async () => {
+    var actor4 = await window.ic.plug.createActor({
+      canisterId: process.env.COMPLAINT_REG_V2_LOAD_BALANCER_CANISTER_ID,
+      interfaceFactory: idlFactoryLB,
+    });
+    actors.push(actor4);
+    setActor(actor);
+  }
 
   // /*************INTERACTION WITH BC ****************/
   const verifyUser = async () => {
@@ -157,6 +159,10 @@ const App = function () {
           {isConnected && isSetupComplete ? (
             isNewUser[0] && (
               <Registeration
+                actor={actor}
+                createActor1={createActor1}
+                createActor2={createActor2}
+                createActor3={createActor3}
                 actors={actors}
                 principalId={principalId}
                 setIsNewUser={setIsNewUser}
@@ -190,9 +196,13 @@ const App = function () {
           element={
             <UserDashboard
               setIsConnected={setIsConnected}
-              createActor={createActor}
+              createActor1={createActor1}
+              createActor2={createActor2}
+              createActor3={createActor3}
+              createActorLB={createActorLB}
               setIsNewUser={setIsNewUser}
               actors={actors}
+              actor={actor}
               setIsSetupComplete={setIsSetupComplete}
             />
           }
@@ -202,8 +212,12 @@ const App = function () {
           element={
             <PoliceDashboard
               setIsConnected={setIsConnected}
-              createActor={createActor}
+              createActor1={createActor1}
+              createActor2={createActor2}
+              createActor3={createActor3}
+              createActorLB={createActorLB}
               setIsNewUser={setIsNewUser}
+              actors={actors}
               actor={actor}
               setIsSetupComplete={setIsSetupComplete}
             />
@@ -213,11 +227,15 @@ const App = function () {
           path="/complaintview/:complaintId/*"
           element={
             <ComplaintView
-              createActor={createActor}
-              actors={actors}
               setIsConnected={setIsConnected}
-              setIsSetupComplete={setIsSetupComplete}
+              createActor1={createActor1}
+              createActor2={createActor2}
+              createActor3={createActor3}
+              createActorLB={createActorLB}
               setIsNewUser={setIsNewUser}
+              actors={actors}
+              actor={actor}
+              setIsSetupComplete={setIsSetupComplete}
             />
           }
         >
