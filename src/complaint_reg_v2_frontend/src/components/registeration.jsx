@@ -8,7 +8,7 @@ var eccrypto = require("eccrypto");
 const CryptoJS = require("crypto-js")
 
 
-const Registeration = ({ actor, actors, principalId , setIsNewUser , createActor1, createActor2, createActor3}) => {
+const Registeration = ({ actor1, actor2, actor3, actors, principalId , setIsNewUser , createActor1, createActor2, createActor3}) => {
   const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "", emailID: "" });
   const [policeInfo, setPoliceInfo] = useState({
     name: "",
@@ -32,11 +32,13 @@ const Registeration = ({ actor, actors, principalId , setIsNewUser , createActor
     localStorage.setItem(principalText, encPrivKey);
     const pubKey = eccrypto.getPublic(privKey);
     const mappedCanisterId = await complaint_reg_v2_load_balancer.mapUserToCanister(principalText, "user");
-    if(mappedCanisterId == 0) await createActor1();
-    else if(mappedCanisterId == 1) await createActor2();
-    else if(mappedCanisterId == 2) await createActor3();
 
-    const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public key
+    let createdUserResp = "";
+    console.log(actor2);
+    if(mappedCanisterId == 0) createdUserResp = await actor1.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public <keygen />
+    else if(mappedCanisterId == 1) createdUserResp = await actor2.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public <keygen />
+    else if(mappedCanisterId == 2) createdUserResp = await actor3.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public <keygen />
+
     console.log(createdUserResp);
     setIsNewUser(false)
     navigate("/userdashboard", { state: { principalId , isConnected: true } });
@@ -48,16 +50,32 @@ const Registeration = ({ actor, actors, principalId , setIsNewUser , createActor
     const encPrivKey = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(privKey.toString("base64")), secret).toString(); // base64, encrypted key
     localStorage.setItem(principalText, encPrivKey);
     const pubKey = eccrypto.getPublic(privKey);
+    let createdPoliceResp = "";
     const mappedCanisterId = await complaint_reg_v2_load_balancer.mapUserToCanister(principalText, "police");
-    if(mappedCanisterId == 0) await createActor1();
-    else if(mappedCanisterId == 1) await createActor2();
-    else if(mappedCanisterId == 2) await createActor3();    
-    const createdPoliceResp = await actor.addPolice(
-      policeInfo.name,
-      policeInfo.designation,
-      policeInfo.role,
-      pubKey.toString("base64")
-    );
+    if(mappedCanisterId == 0) {
+      createdPoliceResp = await actor1.addPolice(
+        policeInfo.name,
+        policeInfo.designation,
+        policeInfo.role,
+        pubKey.toString("base64")
+      );
+    }
+    else if(mappedCanisterId == 1) {
+      createdPoliceResp = await actor2.addPolice(
+        policeInfo.name,
+        policeInfo.designation,
+        policeInfo.role,
+        pubKey.toString("base64")
+      );
+    }
+    else if(mappedCanisterId == 2) {      createdPoliceResp = await actor3.addPolice(
+        policeInfo.name,
+        policeInfo.designation,
+        policeInfo.role,
+        pubKey.toString("base64")
+      );
+    }
+
     console.log(createdPoliceResp);
     setIsNewUser(false);
     navigate("/policedashboard", { state: { principalId , isConnected: true } });

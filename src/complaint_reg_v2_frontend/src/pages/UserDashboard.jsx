@@ -9,7 +9,9 @@ const UserDashboard = ({
   actors,
   setIsConnected,
   createActor1,
-  actor,
+  actor1,
+  actor2, 
+  actor3,
   createActor2,
   createActor3,
   setIsNewUser,
@@ -39,26 +41,34 @@ const UserDashboard = ({
     setIsSetupComplete(true);
     setIsNewUser(false, "user");
     setIsConnected(true);
-    createActor1();
   }, []);
 
   useEffect(() => {
-    if (!isUserSet && actor) getUserDetails();
-  }, [actor]);
+    if (!isUserSet) getUserDetails();
+  }, [actor1, actor2, actor3]);
 
   async function getUserDetails() {
     // console.log("user is :"+principalId+":getUserDetails");
     const principalId = window.ic.plug.sessionManager.sessionData.principalId;
+    if(principalId == "") return;
     const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId);
     console.log("mapped canister: " + mappedCanister);
-
-    if(mappedCanister == 0) await createActor1();
-    else if(mappedCanister == 1) await createActor2();
-    else if(mappedCanister == 2) await createActor3();
+    let user 
+    let userComplaints
+    if(mappedCanister == 0) {
+      user = await actor1.getUserDetails();
+      userComplaints = await actor1.getUserComplaints();  
+    }
+    else if(mappedCanister == 1) {
+      console.log(actor2);
+      user = await actor2.getUserDetails();
+      userComplaints = await actor2.getUserComplaints();
+    }
+    else if(mappedCanister == 2){
+      user = await actor3.getUserDetails();
+      userComplaints = await actor3.getUserComplaints();
+    }
     
-    const user = await actor.getUserDetails();
-    const userComplaints = await actor.getUserComplaints();
-
     // const user = {
     //   principal: "ihdq3043c109j4",
     //   name: "rt",
@@ -180,7 +190,7 @@ const UserDashboard = ({
             <div id="anchor" className="new-section-container">
               <div className="new-section-center">
                 <div className="mb-5">
-                  <ComplaintForm actors={actors} actor={actor} createActor1={createActor1} createActor2={createActor2} createActor3={createActor3} />
+                  <ComplaintForm actors={actors} actor1={actor1} actor2={actor2} actor3={actor3} createActor1={createActor1} createActor2={createActor2} createActor3={createActor3} />
                 </div>
                 <div className="mt-4 d-flex flex-row-reverse">
                   <button

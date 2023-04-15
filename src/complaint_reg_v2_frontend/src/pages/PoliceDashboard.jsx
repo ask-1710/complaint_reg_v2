@@ -14,7 +14,9 @@ var eccrypto = require("eccrypto");
 const CryptoJS = require("crypto-js")
 
 const PoliceDashboard = ({
-  actor,
+  actor1,
+  actor2,
+  actor3,
   actors,
   setIsConnected,
   createActor1,
@@ -36,6 +38,7 @@ const PoliceDashboard = ({
   const [showSaveButton, setShowSaveButton] = useState(false);
   const [isChargesheet, setIsChargesheet] = useState(true);
   const [isComplaintSet, setIsComplaintSet] = useState(false);
+  const [userCanister, setUserCanister] = useState();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,8 +64,11 @@ const PoliceDashboard = ({
     setIsSetupComplete(true);
     setIsNewUser(false, "police");
     setIsConnected(true);
-    createActor1();
   }, []);
+
+  useEffect(()=>{
+    if(!isComplaintSet) getUnassignedComplaints();
+  }, [actor1])
 
   async function getUnassignedComplaints() {
     var complaintsFrom1 = await complaint_reg_v2_backend_1.getUnassignedComplaints();
@@ -78,11 +84,13 @@ const PoliceDashboard = ({
     if(complaintsFrom3 != []) {
       complaints.push(...complaintsFrom3)
     }
+    if(actor1=="") return;
+    const principalId = window.ic.plug.sessionManager.sessionData.principalId;    
+    const userCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId);
+    setUserCanister(userCanister);    
 
-    const principalId = window.ic.plug.sessionManager.sessionData.principalId;
     for(const complaint of complaints) {
       complaint[1].isInvestigator = (principalId == complaint[1].investigatorPrincipal);
-      console.log(complaint[1].isInvestigator)
     }
     // const complaints=[[0, {title: "abc", summary: "sum", date: "12/3/22", location: "delhi"}],
     // [1, {title: "abc", summary: "sum", date: "12/3/22", location: "delhi"}]];
@@ -93,12 +101,22 @@ const PoliceDashboard = ({
   async function updateComplaint(complaintId) {
     const complaintActor = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(complaintId);
     setSelectedComplaint(null);
-    if(complaintActor == 0) await createActor1();
-    else if(complaintActor == 1) await createActor2();
-    else if(complaintActor == 2) await createActor3();
-    console.log("Updating complaint id "+complaintId+" with status "+updatedStatus);
-    var result = await actor.updateComplaintStatus(complaintId, updatedStatus);
+    
+    var result;
+    if(complaintActor == 0){ 
+      
+      result = await actor1.updateComplaintStatus(complaintId, updatedStatus);
+    }
+    else if(complaintActor == 1) {
+      
+      result = await actor2.updateComplaintStatus(complaintId, updatedStatus);
+    }
+    else if(complaintActor == 2) {
+      
+      result = await actor3.updateComplaintStatus(complaintId, updatedStatus);
+    }
     if(result==true) {
+      console.log("Updated complaint id "+complaintId+" with status "+updatedStatus);
       getUnassignedComplaints();
     }
   }
@@ -171,18 +189,37 @@ const PoliceDashboard = ({
 
   async function encryptAESKeyAndSave(aesKey,complaintId, fileCID, document) {
     const principalId = window.ic.plug.sessionManager.sessionData.principalId;
-    const userCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId);
-    if(userCanister == 0) await createActor1();
-    else if(userCanister == 1) await createActor2();
-    else if(userCanister == 2) await createActor3();
-    const pubKey = await actor.getPublicKeyByPrincipal(principalId); // encryption with public key
-    const polPubKey = Buffer.from(pubKey, "base64");
+    let pubKey = "" ;
+    let polPubKey = "";
+    let actor ;
+    console.log(userCanister);
+    if(userCanister == 0) {
+      actor = actor1;
+    }
+    else if(userCanister == 1) {
+      actor = actor2;
+    }
+    else if(userCanister == 2){ 
+      actor = actor3;
+    }    
+    pubKey = await actor.getPublicKeyByPrincipal(principalId); // encryption with public key
+    polPubKey = Buffer.from(pubKey, "base64");
+    console.log(pubKey);
     const aesSymmetricKey = Buffer.from(aesKey, "base64");
 
     const complaintCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(complaintId);
-    if(complaintCanister == 0) await createActor1();
-    else if(complaintCanister == 1) await createActor2();
-    else if(complaintCanister == 2) await createActor3();
+    if(complaintCanister == 0) {
+      
+      actor = actor1
+    }
+    else if(complaintCanister == 1) {
+      
+      actor = actor2;
+    }
+    else if(complaintCanister == 2) {
+
+      actor = actor3;
+    }
     
     eccrypto.encrypt(polPubKey, aesSymmetricKey).then(async function(encrypted) {
       const encStringified = JSON.stringify(encrypted);

@@ -9,7 +9,9 @@ const ComplaintView = ({
   createActor1,
   createActor2,
   createActor3,
-  actor,
+  actor1,
+  actor2,
+  actor3,
   actors,
   setIsSetupComplete,
   setIsConnected,
@@ -38,17 +40,29 @@ const ComplaintView = ({
     setIsSetupComplete(true);
     setIsNewUser(false, userType);
     setIsConnected(true);
-    if(actor == "") createActor();
     if(!hasLoadedInfo) getDetailedComplaintInfo(); 
   }, []);
 
   const getDetailedComplaintInfo = async () => {
     console.log("Inside getDetailedComplaintInfo");
-    if(actor == "")  await createActor();
+
+    const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(parseInt(complaintId));
+    var complaintInfo;
+    if(mappedCanister == 0) {
+      complaintInfo = await actor1.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
+    }
+    else if(mappedCanister == 1){ 
+      console.log(actor2);
+      complaintInfo = await actor2.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
+    }
+    else if(mappedCanister == 2) {
+      complaintInfo = await actor3.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
+    }
+
+    setComplaintInfo(complaintInfo);
     const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
     setPrincipal(principal);
-    var complaintInfo = await actor.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
-    setComplaintInfo(complaintInfo);
+    
     var toDate = new Date(complaintInfo.date);
     var today = new Date();
     var differenceInDays = Math.ceil((today.getTime() - toDate.getTime())/ (1000 * 60 * 60 * 24));
@@ -59,13 +73,6 @@ const ComplaintView = ({
     console.log(complaintInfo);
   };
 
-  const createActor = async () => {
-    const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(parseInt(complaintId));
-    
-    if(mappedCanister == 0) await createActor1();
-    else if(mappedCanister == 1) await createActor2();
-    else if(mappedCanister == 2) await createActor3();
-  }
 
   function getFIRDate() {
     var lastDate;
@@ -167,7 +174,7 @@ const ComplaintView = ({
       )}
 
       <Routes>
-        <Route path={`:cid`} element={<FileFrame createActor1={createActor1} createActor2={createActor2} createActor3={createActor3} actor={actor} actors={actors}/>} />
+        <Route path={`:cid`} element={<FileFrame createActor1={createActor1} createActor2={createActor2} createActor3={createActor3} actor1={actor1} actor2={actor2} actor3={actor3} actors={actors}/>} />
       </Routes>
     </div>
   );

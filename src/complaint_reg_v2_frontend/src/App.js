@@ -20,17 +20,19 @@ const App = function () {
   const [isSetupComplete, setIsSetupComplete] = useState(false);
   const [isNewUser, setIsNewUser] = useState([true, ""]);
   const [actors, setActors] = useState([]);
+  const [actor1, setActor1] = useState("");
+  const [actor2, setActor2] = useState("");
+  const [actor3, setActor3] = useState("");
   const navigate = useNavigate();
   
 
 
   const whitelist = [process.env.COMPLAINT_REG_V2_BACKEND_1_CANISTER_ID, process.env.COMPLAINT_REG_V2_BACKEND_2_CANISTER_ID, process.env.COMPLAINT_REG_V2_BACKEND_3_CANISTER_ID, process.env.COMPLAINT_REG_V2_LOAD_BALANCER_CANISTER_ID];
-  console.log(whitelist);
   const host = "http://127.0.0.1:4943";
   const pathname = useLocation().pathname;
 
   useEffect(() => {
-    if (isConnected && actor=="") createActor1();
+    if (isConnected && actor=="") createActors();
   }, [isConnected]);
 
   useEffect(() => {
@@ -76,32 +78,52 @@ const App = function () {
       console.log(e);
     }
   };
+  const createActors = async () => {
+    await createActor1();
+    await createActor2();
+    await createActor3();
+    await createActorLB();
+    console.log("actors created");
+  }
   const createActor1 = async () => {
     try {
+      console.log("Creating createActor1");
       const NNSUiActor = await window.ic.plug.createActor({
         canisterId: process.env.COMPLAINT_REG_V2_BACKEND_1_CANISTER_ID,
         interfaceFactory: idlFactory1,
       });
       setActor(NNSUiActor);
+      setActor1(NNSUiActor);
+      console.log("actor1")
+      console.log(NNSUiActor);
     } catch (ex) {
       console.log("Error while creating actor\n" + ex);
     }
   };
   const createActor2 = async () => {
+    console.log("Creating createActor2");
     var actor2 = await window.ic.plug.createActor({
       canisterId: process.env.COMPLAINT_REG_V2_BACKEND_2_CANISTER_ID,
       interfaceFactory: idlFactory2,
     });
     actors.push(actor2);
     setActor(actor2)
+    setActor2(actor2);
+    console.log("actor2")
+    console.log(actor2);
   }
   const createActor3 = async () => {
+    console.log("Creating createActor3");
+
     var actor3 = await window.ic.plug.createActor({
       canisterId: process.env.COMPLAINT_REG_V2_BACKEND_3_CANISTER_ID,
       interfaceFactory: idlFactory3,
     });
     actors.push(actor3);
     setActor(actor3)
+    setActor3(actor3);
+    console.log("actor3")
+    console.log(actor3);
   }
   const createActorLB = async () => {
     var actor4 = await window.ic.plug.createActor({
@@ -109,7 +131,9 @@ const App = function () {
       interfaceFactory: idlFactoryLB,
     });
     actors.push(actor4);
-    setActor(actor);
+    setActor(actor4);
+    console.log("actor4")
+    console.log(actor4);
   }
 
   // /*************INTERACTION WITH BC ****************/
@@ -159,6 +183,9 @@ const App = function () {
                 createActor1={createActor1}
                 createActor2={createActor2}
                 createActor3={createActor3}
+                actor1={actor1}
+                actor2={actor2}
+                actor3={actor3}
                 actors={actors}
                 principalId={principalId}
                 setIsNewUser={setIsNewUser}
@@ -195,6 +222,9 @@ const App = function () {
               createActor1={createActor1}
               createActor2={createActor2}
               createActor3={createActor3}
+              actor1={actor1}
+              actor2={actor2}
+              actor3={actor3}
               createActorLB={createActorLB}
               setIsNewUser={setIsNewUser}
               actors={actors}
@@ -211,6 +241,9 @@ const App = function () {
               createActor1={createActor1}
               createActor2={createActor2}
               createActor3={createActor3}
+              actor1={actor1}
+              actor2={actor2}
+              actor3={actor3}
               createActorLB={createActorLB}
               setIsNewUser={setIsNewUser}
               actors={actors}
@@ -227,6 +260,9 @@ const App = function () {
               createActor1={createActor1}
               createActor2={createActor2}
               createActor3={createActor3}
+              actor1={actor1}
+              actor2={actor2}
+              actor3={actor3}
               createActorLB={createActorLB}
               setIsNewUser={setIsNewUser}
               actors={actors}

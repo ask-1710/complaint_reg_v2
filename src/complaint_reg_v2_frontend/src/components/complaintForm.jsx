@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Card } from "../../../../node_modules/react-bootstrap/esm/index";
 import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
 
-const ComplaintForm = ({createActor, actors, actor, createActor1, createActor2, createActor3}) => {
+const ComplaintForm = ({createActor, actors, actor1,actor2,actor3, createActor1, createActor2, createActor3}) => {
   const [newComplaint, setNewComplaint] = useState({
     title: "",
     summary: "",
@@ -22,12 +22,18 @@ const ComplaintForm = ({createActor, actors, actor, createActor1, createActor2, 
     const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId)
     console.log("mapped canister: " + mappedCanister);
     
-    if(mappedCanister == 0) await createActor1();
-    else if(mappedCanister == 1) await createActor2();
-    else if(mappedCanister == 2) await createActor3();
-    
     const complaintId = await complaint_reg_v2_load_balancer.getComplaintId();
-    const isCreated = await actor.addComplaint(complaintId, newComplaint.title, newComplaint.summary, newComplaint.location, newComplaint.date.toString());
+    let isCreated;
+    if(mappedCanister == 0) {
+      isCreated = await actor1.addComplaint(complaintId, newComplaint.title, newComplaint.summary, newComplaint.location, newComplaint.date.toString());
+    }
+    else if(mappedCanister == 1) {
+      isCreated = await actor2.addComplaint(complaintId, newComplaint.title, newComplaint.summary, newComplaint.location, newComplaint.date.toString());
+    }
+    else if(mappedCanister == 2){ 
+      isCreated = await actor3.addComplaint(complaintId, newComplaint.title, newComplaint.summary, newComplaint.location, newComplaint.date.toString());
+    }
+    
     if(isCreated) {
         console.log("Complaint Created");
         setComplaintCreated(true);

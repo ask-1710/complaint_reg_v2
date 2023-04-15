@@ -14,7 +14,7 @@ var eccrypto = require("eccrypto");
 // import * as eccryptoJS from 'eccrypto-js';
 const CryptoJS = require("crypto-js")
 
-const FileFrame = ({actors, actor, createActor1, createActor2, createActor3}) => {
+const FileFrame = ({actors, actor, createActor1, createActor2, createActor3, actor1, actor2, actor3}) => {
     const params = useParams();
     const cid = params?.cid;
     const [isDecrypted, setIsDecrypted] = useState(false);
@@ -89,20 +89,33 @@ const FileFrame = ({actors, actor, createActor1, createActor2, createActor3}) =>
         const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
         console.time("decrypt-aes-key");
         console.log("retrieve keys");
-        if(mappedCanister == 0) await createActor1();
-        else if(mappedCanister == 1) await createActor2();
-        else if(mappedCanister == 2) await createActor3();
+        let keys;
+        if(mappedCanister == 0) {
+            keys = await actor1.getEncAESKeyForDecryption(cid);
+        }
+        else if(mappedCanister == 1) {
+            keys = await actor2.getEncAESKeyForDecryption(cid);
+        }
+        else if(mappedCanister == 2){
+            keys = await actor3.getEncAESKeyForDecryption(cid);
+        }
 
-        const keys = await actor.getEncAESKeyForDecryption(cid);
+        
         console.log(keys);
         if(keys.cid == "" || keys.aesKey == "") {
             setHasAccess(false);
+            let hasRequested ;
             let userMappedCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principal);
-            if(userMappedCanister == 0) await createActor1();
-            else if(userMappedCanister == 1) await createActor2();
-            else if(userMappedCanister == 2) await createActor3();
+            if(userMappedCanister == 0) {
+                hasRequested = await actor1.hasRequestedAccessForCID(cid);
+            }
+            else if(userMappedCanister == 1) {
+                hasRequested = await actor2.hasRequestedAccessForCID(cid);
+            }
+            else if(userMappedCanister == 2) {
+                hasRequested = await actor3.hasRequestedAccessForCID(cid);
+            }
             setUserMappedCanister(userMappedCanister);
-            const hasRequested = await actor.hasRequestedAccessForCID(cid);
             setHasRequestedAccess(hasRequested);
             console.log("no access to file");
         } else {
@@ -158,20 +171,32 @@ const FileFrame = ({actors, actor, createActor1, createActor2, createActor3}) =>
         
     async function requestAccessByCID() {
         console.log('Sending request for file with CID '+cid);
-        if(userMappedCanister == 0) await createActor1();
-        else if(userMappedCanister == 1) await createActor2();
-        else if(userMappedCanister == 2) await createActor3();
-        const hasRequested = await actor.sendRequestAccessForCID(cid); // TO BE IMPLEMENTED
-        setHasRequestedAccess(hasRequested);
+        let hasRequested;
+        if(userMappedCanister == 0) {
+            hasRequested = await actor1.sendRequestAccessForCID(cid);
+        }
+        else if(userMappedCanister == 1) {
+            hasRequested = await actor2.sendRequestAccessForCID(cid); 
+        }
+        else if(userMappedCanister == 2) {
+            hasRequested = await actor3.sendRequestAccessForCID(cid); 
+        }
+        setHasRequestedAccess(hasRequested); 
     }
 
     async function provideFileAccess(principal) {
         console.log(principal);
         var reqCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principal);
         var pubKeyOfRequestor;
-        if(reqCanister == 0) {pubKeyOfRequestor = await complaint_reg_v2_backend_1.getPublicKeyByPrincipal(principal);await createActor1();}
-        else if(reqCanister == 1) { await complaint_reg_v2_backend_2.getPublicKeyByPrincipal(principal); await createActor2();}
-        else if(reqCanister == 2) {await complaint_reg_v2_backend_3.getPublicKeyByPrincipal(principal); await createActor3();}
+        if(reqCanister == 0) {
+            pubKeyOfRequestor = await complaint_reg_v2_backend_1.getPublicKeyByPrincipal(principal);
+        }
+        else if(reqCanister == 1) { 
+            await complaint_reg_v2_backend_2.getPublicKeyByPrincipal(principal); 
+        }
+        else if(reqCanister == 2) {
+            await complaint_reg_v2_backend_3.getPublicKeyByPrincipal(principal); 
+        }
 
         console.log("pub key of user " + pubKeyOfRequestor.toString());
 
@@ -180,18 +205,27 @@ const FileFrame = ({actors, actor, createActor1, createActor2, createActor3}) =>
         const aesSymmetricKey = Buffer.from(aesKey, "base64");
         console.log(aesKey + " key given for access to user");
         eccrypto.encrypt(bufPubKey, aesSymmetricKey).then(async function(encrypted) {
-          const encStringified = JSON.stringify(encrypted);
-        // store encrypted aes key
-          const result = await actor.provideAccessToFile(principal, cid, encStringified);
-          console.log(result);
-          setProvidingAccessStatus(result);
-          if(result == true) {
+            const encStringified = JSON.stringify(encrypted);
+            // store encrypted aes key
+            let result ;
+            if(reqCanister == 0) {
+                result = await actor1.provideAccessToFile(principal, cid, encStringified);
+            }
+            else if(reqCanister == 1) { 
+                result = await actor2.provideAccessToFile(principal, cid, encStringified);            
+            }
+            else if(reqCanister == 2) {
+                result = await actor3.provideAccessToFile(principal, cid, encStringified);            
+            }
+            console.log(result);
+            setProvidingAccessStatus(result);
+            if(result == true) {
             // refetch requests
-                const getRequests1 = await complaint_reg_v2_backend_1.getFileAccessRequestsToTest(cid);
-                const getRequests2 = await complaint_reg_v2_backend_2.getFileAccessRequestsToTest(cid);
-                const getRequests3 = await complaint_reg_v2_backend_3.getFileAccessRequestsToTest(cid);
                 let getRequests = []
-                if(getRequests1.length==1) getRequests.push(...getRequests1);
+                const getRequests1 = await complaint_reg_v2_backend_1.getFileAccessRequests(cid);
+                const getRequests2 = await complaint_reg_v2_backend_2.getFileAccessRequests(cid);
+                const getRequests3 = await complaint_reg_v2_backend_3.getFileAccessRequests(cid);
+                if(getRequests1.length>0) getRequests.push(...getRequests1);
                 if(getRequests2.length>0) getRequests.push(...getRequests2);
                 if(getRequests3.length>0) getRequests.push(...getRequests3);
                 setFileRequests(getRequests);
