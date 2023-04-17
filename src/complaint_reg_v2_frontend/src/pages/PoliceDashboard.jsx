@@ -10,6 +10,7 @@ import Spinner from "react-bootstrap/Spinner";
 import { useEffect } from "react";
 import { Badge } from "react-bootstrap";
 import { create } from "ipfs-http-client";
+import * as FileSaver from "file-saver";
 var eccrypto = require("eccrypto");
 const CryptoJS = require("crypto-js")
 
@@ -257,11 +258,101 @@ const PoliceDashboard = ({
     setShowSaveButton(updated!=originalStatus);
   }
 
+  async function writeToFile(fileName, data) {
+
+    const file = new Blob([data], {type: 'application/json'});
+
+    FileSaver.saveAs(file, fileName);
+    
+  }
+
+  function stringifyJSON1(obj) {
+    console.log(obj);
+    if(typeof obj == "bigint") {
+      return obj.toString();
+    }
+    // Base case: handle primitive types
+    if (typeof obj !== 'object' || obj === null) {
+      return JSON.stringify(obj);
+    }
+    // arrays
+    // const newObj = Array.isArray(obj) ? [] : {};
+
+    const newObj = Array.isArray(obj) ? obj : {};
+    
+    // Recursive case: handle objects
+    const keys = Object.keys(obj);  
+    keys.forEach((key) => {
+      newObj[key] = stringifyJSON(obj[key]);
+    });
+    console.log("If json ? ");
+    console.log(newObj);
+ 
+    return JSON.stringify(newObj);
+  }
+
+  function stringifyJSON(obj) {
+    if(typeof obj == "bigint") {
+      return obj.toString();
+    }
+    // Base case: handle primitive types
+    if (typeof obj !== 'object' || obj === null) {
+      return obj;
+    }
+  
+    // Recursive case: handle objects and arrays
+    const keys = Object.keys(obj);
+  
+    const newObj = Array.isArray(obj) ? [] : {};
+  
+    keys.forEach((key) => {
+      newObj[key] = stringifyJSON(obj[key]);
+    });
+  
+    return JSON.stringify(newObj);
+  }
+  
+
+  
+  async function backupAllData() {
+    const principalId = window.ic.plug.sessionManager.sessionData.principalId;    
+    const userDet = await complaint_reg_v2_load_balancer.getUser(principalId);
+    if(userDet[1] == "admin") {
+      const allData1 = await actor1.queryAllData();
+      const allData2 = await actor2.queryAllData();
+      const allData3 = await actor3.queryAllData();
+      const date1 = new Date().toString() + "-replica-1";
+      const date2 = new Date().toString() + "-replica-2";
+      const date3 = new Date().toString() + "-replica-3";
+      let stringified1 = stringifyJSON(allData1);
+      let stringified2 = stringifyJSON(allData2);
+      let stringified3 = stringifyJSON(allData3);
+
+      writeToFile(date1, stringified1);
+      writeToFile(date2, stringified2);
+      writeToFile(date3, stringified3);
+    } else {
+      alert("Only admins can create backups!");
+    }
+  }
+
   return (
     <div className="container">
-      <button className="button-27 my-4" onClick={getUnassignedComplaints}>
-        Get New Complaints
-      </button>
+      <div className="flex d-flex">
+        <div className="row">
+          <div className="col-8">
+          <button className="button-27 my-4" onClick={getUnassignedComplaints}>
+            Get New Complaints
+          </button>
+          </div>
+          <div className="col-4">
+          <button className="button-27 my-4" onClick={backupAllData}>
+            Backup Data
+          </button>
+          </div>
+        </div>
+      </div>
+
       {!isComplaintSet && 
           <div className="center">
             <Spinner animation="border">
@@ -377,7 +468,7 @@ const PoliceDashboard = ({
                             }
                           </div>
                         </div>
-                      </div>{" "}
+                      
 
                       <div>
                         {
@@ -439,6 +530,7 @@ const PoliceDashboard = ({
                             )
                           )
                         }
+                      </div>
                       </div>
                     </div>                    
                   ) : (
