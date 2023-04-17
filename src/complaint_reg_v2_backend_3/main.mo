@@ -38,6 +38,9 @@ actor Actor3 {
     complainantPrincipal: Principal;
     updatedOn: Time.Time;
     investigatorPrincipal: Principal;
+    FIRDate : Time.Time;
+    chargesheetDate: Time.Time;
+    closureReportDate : Time.Time;
   };
 
   public type Role = {
@@ -91,11 +94,27 @@ actor Actor3 {
     complainantName: Text;
     updatedOn: Time.Time;
     complainantAddress: Text;  
+    FIRDate : Time.Time;
+    chargesheetDate: Time.Time;
+    closureReportDate : Time.Time;
   };
 
   type FileRequestor = {
     category : Text; // police / complainant
     name: Text; 
+  };
+
+  public type AllData = {
+    userList : [(Principal, User)];
+    assignedRoles : [(Principal, Role)];
+    policeList : [(Principal, Police)];
+    roleRequests : [(Principal, Role)];
+    complaintList : [(Nat, Complaint)];
+    complaintOwnership : [(Nat, [Principal])];
+    keysList: [(Principal, Text)];
+    uploaderAESKeys: [(Text, EncKey)];
+    userAESKeys: [(Principal, [UserCIDKey])];
+    userFileAccessRequests : [(Text, [Principal])];
   };
 
   var numComplaints : Nat = 0;
@@ -125,6 +144,15 @@ actor Actor3 {
       };
       case ("owner") {
         actualRole := #investigator;
+      };
+      case ("admin") {
+        actualRole := #administrator;
+      };
+      case ("administrator") {
+        actualRole := #administrator;
+      };
+      case ("complainant") {
+        actualRole := #complainant;
       };
       case (_) {
         actualRole := #general;
@@ -236,6 +264,9 @@ actor Actor3 {
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
             investigatorPrincipal = principal;
+            FIRDate = oldComplaint.FIRDate;
+            chargesheetDate = oldComplaint.chargesheetDate;
+            closureReportDate = oldComplaint.closureReportDate;
           };
           complaintList.put(complaintId, newComplaint);
         };
@@ -320,28 +351,28 @@ actor Actor3 {
   private func canAddComplaint(principal : Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
-      case (?#complainant) return true;
+      case (?#complainant or ?#administrator) return true;
       case (_) return false;
     };
   };
   private func canCreateEvidence(principal : Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
-      case (?#investigator) return true;
+      case (?#investigator or ?#administrator) return true;
       case (_) return false;
     };
   };
   private func canModifyEvidence(principal : Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
-      case (?#investigator) return true;
+      case (?#investigator or ?#administrator) return true;
       case (_) return false;
     };
   };
   private func canViewEvidence(principal : Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
-      case (?#complainant or ?#investigator) return true;
+      case (?#complainant or ?#investigator or ?#administrator) return true;
       case (_) return false;
     };
   };
@@ -353,6 +384,13 @@ actor Actor3 {
     };
   };
   private func canAssignRole(principal: Principal) : Bool {
+    let role = getRole(principal);
+    switch (role) {
+      case (?#administrator) return true;
+      case (_) return false;
+    };
+  };
+  private func canQueryAllData(principal: Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
       case (?#administrator) return true;
@@ -470,6 +508,9 @@ actor Actor3 {
       investigatorPrincipal = "";
       complainantAddress = "";
       updatedOn = Time.now();
+      FIRDate = Time.now();
+      chargesheetDate= Time.now();
+      closureReportDate = Time.now();
     };
   };
   private func convertPrincipalsToText(principals: [Principal]): [Text] {
@@ -549,6 +590,9 @@ actor Actor3 {
       complainantPrincipal = caller;
       updatedOn=Time.now();
       investigatorPrincipal=caller;
+      FIRDate = Time.now();
+      chargesheetDate= Time.now();
+      closureReportDate = Time.now();
     };
     let dummyComplaintId: Nat = 0;
     switch (userObj) {
@@ -635,6 +679,9 @@ actor Actor3 {
           complainantAddress = complainantAddress;
           complainantPrincipal = Principal.toText(info.complainantPrincipal);
           updatedOn = info.updatedOn;
+          FIRDate = info.FIRDate;
+          chargesheetDate= info.chargesheetDate;
+          closureReportDate = info.closureReportDate;
         };    
         return complaintView;    
       };
@@ -746,6 +793,22 @@ actor Actor3 {
       };
     } 
   };
+
+  public query ({caller}) func queryAllData() : async AllData {
+    assert(canQueryAllData(caller));
+    return {
+      userList = Iter.toArray<(Principal, User)>(userList.entries());
+      assignedRoles = Iter.toArray<(Principal, Role)>(assignedRoles.entries());
+      policeList = Iter.toArray<(Principal, Police)>(policeList.entries());
+      roleRequests = Iter.toArray<(Principal, Role)>(roleRequests.entries());
+      complaintList = Iter.toArray<(Nat, Complaint)>(complaintList.entries());
+      complaintOwnership = Iter.toArray<(Nat, [Principal])>(complaintOwnership.entries());
+      keysList = Iter.toArray<(Principal, Text)>(keysList.entries());
+      uploaderAESKeys = Iter.toArray<(Text, EncKey)>(uploaderAESKeys.entries());
+      userAESKeys = Iter.toArray<(Principal, [UserCIDKey])>(userAESKeys.entries());
+      userFileAccessRequests = Iter.toArray<(Text, [Principal])>(userFileAccessRequests.entries());
+    };
+  };
   /************** QUERY FUNCTIONS END ***********/
 
   /************** UPDATE FUNCTIONS END ***********/
@@ -798,6 +861,9 @@ actor Actor3 {
             complainantPrincipal = caller;
             updatedOn = Time.now();
             investigatorPrincipal=caller;
+            FIRDate = Time.now();
+            chargesheetDate= Time.now();
+            closureReportDate = Time.now();
           },
         );
         oldComplaints := Array.append(oldComplaints, [compId]);
@@ -869,6 +935,9 @@ actor Actor3 {
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
             investigatorPrincipal=oldComplaint.investigatorPrincipal;
+            FIRDate = oldComplaint.FIRDate;
+            chargesheetDate= oldComplaint.chargesheetDate;
+            closureReportDate = oldComplaint.closureReportDate;
           };
           complaintList.put(complaintId, newComplaint);
           return true;
@@ -902,6 +971,9 @@ actor Actor3 {
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
             investigatorPrincipal = oldComplaint.investigatorPrincipal;
+            FIRDate = oldComplaint.FIRDate;
+            chargesheetDate= oldComplaint.chargesheetDate;
+            closureReportDate = oldComplaint.closureReportDate;
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -999,6 +1071,9 @@ actor Actor3 {
             FIR = fileCID ;// CID - step1
             chargesheet = oldComplaint.chargesheet; // CID
             closureReport = oldComplaint.closureReport; // CID
+            FIRDate = Time.now();
+            chargesheetDate = oldComplaint.chargesheetDate;
+            closureReportDate = oldComplaint.closureReportDate;
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
             investigatorPrincipal = oldComplaint.investigatorPrincipal;
@@ -1057,6 +1132,9 @@ actor Actor3 {
             closureReport = oldComplaint.closureReport; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            FIRDate = oldComplaint.FIRDate;
+            chargesheetDate = Time.now();
+            closureReportDate = oldComplaint.closureReportDate;
             investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
@@ -1113,6 +1191,9 @@ actor Actor3 {
             closureReport = fileCID; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            FIRDate = oldComplaint.FIRDate;
+            chargesheetDate = oldComplaint.chargesheetDate;
+            closureReportDate = Time.now();
             investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
