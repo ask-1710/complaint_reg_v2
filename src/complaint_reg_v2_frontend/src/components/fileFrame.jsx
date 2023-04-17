@@ -45,25 +45,24 @@ const FileFrame = ({actors, actor, createActor1, createActor2, createActor3, act
     });
     
     useEffect(()=>{
-        if(actor=="") createActor1();
-        else startActivity();
-    },[]);
+        startActivity();
+    },[actor3]);
 
     const startActivity = async () => {
         let getRequests = []
+        var mappedCanister = 0
+        var fileDetails = await complaint_reg_v2_load_balancer.getFileOwner(cid);
+        console.log(fileDetails);
+        mappedCanister = fileDetails[1];
 
-        const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
-        if(userType == "police") {
+        if(userType == "police" || userType == "admin") {
             console.log("is police");
-            var fileDetails = await complaint_reg_v2_load_balancer.getFileOwner(cid);
-            console.log(fileDetails);
             var actualfileOwner = fileDetails[0];
-            var mappedCanister = fileDetails[1];
+            const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
             if(actualfileOwner == principal) {
                 const getRequests1 = await complaint_reg_v2_backend_1.getFileAccessRequests(cid);
                 const getRequests2 = await complaint_reg_v2_backend_2.getFileAccessRequests(cid);
                 const getRequests3 = await complaint_reg_v2_backend_3.getFileAccessRequests(cid);
-                console.log(getRequests1);
                 if(getRequests1.length>0) getRequests.push(...getRequests1);
                 if(getRequests2.length>0) getRequests.push(...getRequests2);
                 if(getRequests3.length>0) getRequests.push(...getRequests3);
@@ -71,19 +70,18 @@ const FileFrame = ({actors, actor, createActor1, createActor2, createActor3, act
             else {
                 console.log("not file owner");
                 setIsFileOwner(false);
-                setMappedCanister(mappedCanister);
-                await getAESKeyToViewFile();
+                await getAESKeyToViewFile(mappedCanister);
                 return;
             }
             setIsFileOwner(true);
             console.log(getRequests);
             setFileRequests(getRequests);
         }
-        await getAESKeyToViewFile();
+        await getAESKeyToViewFile(mappedCanister);
         
     };
 
-    const getAESKeyToViewFile = async () => {
+    const getAESKeyToViewFile = async (mappedCanister) => {
         var startTime = Date.now();
 
         const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
@@ -192,10 +190,10 @@ const FileFrame = ({actors, actor, createActor1, createActor2, createActor3, act
             pubKeyOfRequestor = await complaint_reg_v2_backend_1.getPublicKeyByPrincipal(principal);
         }
         else if(reqCanister == 1) { 
-            await complaint_reg_v2_backend_2.getPublicKeyByPrincipal(principal); 
+            pubKeyOfRequestor = await complaint_reg_v2_backend_2.getPublicKeyByPrincipal(principal); 
         }
         else if(reqCanister == 2) {
-            await complaint_reg_v2_backend_3.getPublicKeyByPrincipal(principal); 
+            pubKeyOfRequestor = await complaint_reg_v2_backend_3.getPublicKeyByPrincipal(principal); 
         }
 
         console.log("pub key of user " + pubKeyOfRequestor.toString());
