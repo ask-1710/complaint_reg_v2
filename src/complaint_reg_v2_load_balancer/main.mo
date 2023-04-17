@@ -16,14 +16,31 @@ import Time "mo:base/Time";
 
 actor {
   
+  public type Role = {
+    #administrator; // establish accounts for each user setMember()
+    #investigator; // current custodian of documents, tranferOwnership(), modifyEvidence()
+    #complainant; // getEvidence(), createEvidence()
+    #general;
+  };
+  
   let userCanisterMapping : HashMap.HashMap<Principal, (Nat, Text)> = HashMap.HashMap(32, Principal.equal, Principal.hash); // maps user principal to canister num
   let complaintCanisterMapping: HashMap.HashMap<Nat, Nat> = HashMap.HashMap(32, Nat.equal, Hash.hash); // maps complaint id to canister num
   let fileCIDOwnerMapping: HashMap.HashMap<Text, (Text, Nat)> = HashMap.HashMap(32, Text.equal, Text.hash); // maps file CID to canister num
   var canisterNum = 0;
   var numComplaint = 0;
-  let Actor1 = actor("rrkah-fqaaa-aaaaa-aaaaq-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
-  let Actor2 = actor("ryjl3-tyaaa-aaaaa-aaaba-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
-  let Actor3 = actor("r7inp-6aaaa-aaaaa-aaabq-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool };
+  var admins: [Text]  = [];
+  let Actor1 = actor("rrkah-fqaaa-aaaaa-aaaaq-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool ;
+                                                              getRoleRequests: () -> async [(Principal, Role)];
+                                                              setRole : (Principal,Text) -> async ();
+                                                            };
+  let Actor2 = actor("ryjl3-tyaaa-aaaaa-aaaba-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool ;
+                                                              getRoleRequests: () -> async [(Principal, Role)] ;
+                                                              setRole : (Principal,Text) -> async ();
+                                                            };
+  let Actor3 = actor("r7inp-6aaaa-aaaaa-aaabq-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool ;
+                                                              getRoleRequests: () -> async [(Principal, Role)] ;
+                                                              setRole : (Principal,Text) -> async ();
+                                                            };
 
   let actors = [Actor1, Actor2, Actor3];
   
@@ -92,7 +109,7 @@ actor {
         case (?canNum) { actorNum := canNum ; };
       };
       var canister = actors[actorNum];
-      Debug.print("Actor of complaint" # Nat.toText(actorNum));
+      Debug.print("Actor of complaint " # Nat.toText(actorNum));
       var res = false;
       try {
         res :=  await canister.transferOwnershipTo(complaintId, policePrincipalText);      
@@ -125,6 +142,45 @@ actor {
           }
         };
       } 
+    };
+    public shared func getAllRoleRequests() : async [(Principal, Role)] {
+      var requestsfromCanister1 = await Actor1.getRoleRequests();
+      let requestsfromCanister2 = await Actor2.getRoleRequests();
+      let requestsfromCanister3 = await Actor3.getRoleRequests();
+      var allRequests: [(Principal, Role)] = [];
+      allRequests := Array.append<(Principal, Role)>(allRequests, requestsfromCanister1);
+      allRequests := Array.append<(Principal, Role)>(allRequests, requestsfromCanister2);
+      allRequests := Array.append<(Principal, Role)>(allRequests, requestsfromCanister3);
+      return allRequests;
+    };
+    public shared func setRoleRequest(principal: Text, role: Text) : async () {
+      let usrCanister = userCanisterMapping.get(Principal.fromText(principal)) ;
+      if(role == "admin" or role == "administrator") {
+        admins := Array.append<Text>(admins, [principal]);
+      };
+      switch(usrCanister) {
+        case null return;
+        case (?canisterNum) {
+          let newUser = (canisterNum.0, role);
+          userCanisterMapping.put(Principal.fromText(principal), newUser);
+          var canisterActor = actors[canisterNum.0];
+          return await canisterActor.setRole(Principal.fromText(principal), role);
+        };
+      };
+    };
+    public query func getAdmins(): async [Text] {
+      return admins;
+    };
+    public query func getUser(principal: Text) : async (Nat, Text) {      
+      let canister = userCanisterMapping.get(Principal.fromText(principal));
+      switch(canister) {
+        case null {
+          return (0, "none");
+        };
+        case (?canstr) {
+          return canstr;
+        };
+      };
     };
     /*************************** HASHED CANISTER CALL ****************************/
 };

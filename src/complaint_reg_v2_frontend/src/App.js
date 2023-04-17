@@ -152,7 +152,7 @@ const App = function () {
             state: { actor: actor, principalId: principalId },
           });
         }
-        if (isNew[1] == "police") {
+        if (isNew[1] == "police" || isNew[1]=='admin') {
           setIsSetupComplete(true);
           setIsNewUser(isNew);
           navigate("/policedashboard", {
@@ -271,7 +271,7 @@ const App = function () {
             />
           }
         >
-          <Route path=":cid" element={<FileFrame />} />
+          <Route path={`:cid`} element={<FileFrame createActor1={createActor1} createActor2={createActor2} createActor3={createActor3} actor1={actor1} actor2={actor2} actor3={actor3} actors={actors}/>} />
         </Route>
       </Routes>
     </div>
