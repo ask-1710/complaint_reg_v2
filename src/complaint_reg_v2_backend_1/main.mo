@@ -391,12 +391,11 @@ actor Actor3 {
     };
   };
   private func canQueryAllData(principal: Principal) : Bool {
-    // let role = getRole(principal);
-    // switch (role) {
-    //   case (?#administrator) return true;
-    //   case (_) return true;
-    // };
-    return true;
+    let role = getRole(principal);
+    switch (role) {
+      case (?#administrator) return true;
+      case (_) return false;
+    };
   };
   private func doesUserHaveFileAccess(caller: Principal, cid: Text): Bool {
     let allFilesWithAccess = userAESKeys.get(caller);
