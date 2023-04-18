@@ -30,15 +30,15 @@ actor {
   var numComplaint = 0;
   var admins: [Text]  = [];
   let Actor1 = actor("rrkah-fqaaa-aaaaa-aaaaq-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool ;
-                                                              getRoleRequests: () -> async [(Principal, Role)];
+                                                              getRoleRequests: () -> async [(Principal, (Role, Text))];
                                                               setRole : (Principal,Text) -> async ();
                                                             };
   let Actor2 = actor("ryjl3-tyaaa-aaaaa-aaaba-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool ;
-                                                              getRoleRequests: () -> async [(Principal, Role)] ;
+                                                              getRoleRequests: () -> async [(Principal, (Role, Text))] ;
                                                               setRole : (Principal,Text) -> async ();
                                                             };
   let Actor3 = actor("r7inp-6aaaa-aaaaa-aaabq-cai"): actor { transferOwnershipTo: (Nat, Text) -> async Bool ;
-                                                              getRoleRequests: () -> async [(Principal, Role)] ;
+                                                              getRoleRequests: () -> async [(Principal, (Role, Text))] ;
                                                               setRole : (Principal,Text) -> async ();
                                                             };
 
@@ -143,14 +143,14 @@ actor {
         };
       } 
     };
-    public shared func getAllRoleRequests() : async [(Principal, Role)] {
+    public shared func getAllRoleRequests() : async [(Principal, (Role, Text))] {
       var requestsfromCanister1 = await Actor1.getRoleRequests();
       let requestsfromCanister2 = await Actor2.getRoleRequests();
       let requestsfromCanister3 = await Actor3.getRoleRequests();
-      var allRequests: [(Principal, Role)] = [];
-      allRequests := Array.append<(Principal, Role)>(allRequests, requestsfromCanister1);
-      allRequests := Array.append<(Principal, Role)>(allRequests, requestsfromCanister2);
-      allRequests := Array.append<(Principal, Role)>(allRequests, requestsfromCanister3);
+      var allRequests: [(Principal, (Role, Text))] = [];
+      allRequests := Array.append<(Principal, (Role, Text))>(allRequests, requestsfromCanister1);
+      allRequests := Array.append<(Principal, (Role, Text))>(allRequests, requestsfromCanister2);
+      allRequests := Array.append<(Principal, (Role, Text))>(allRequests, requestsfromCanister3);
       return allRequests;
     };
     public shared func setRoleRequest(principal: Text, role: Text) : async () {

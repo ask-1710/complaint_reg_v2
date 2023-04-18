@@ -9,14 +9,14 @@ const CryptoJS = require("crypto-js")
 
 
 const Registeration = ({ actor1, actor2, actor3, actors, principalId , setIsNewUser , createActor1, createActor2, createActor3}) => {
-  const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "", emailID: "" });
+  const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "", emailID: "" , aadhaarNum: ""});
   const [policeInfo, setPoliceInfo] = useState({
     name: "",
     designation: "",
     role: "investigator",
     stationCode: "",
     stationAddress: "",
-    mobileNum: ""
+    mobileNum: "",
   });
   const [isUser, setIsUser] = useState(false);
   const [visibleButton, setVisibleButton] = useState(false);
@@ -35,9 +35,9 @@ const Registeration = ({ actor1, actor2, actor3, actors, principalId , setIsNewU
 
     let createdUserResp = "";
     console.log(actor2);
-    if(mappedCanisterId == 0) createdUserResp = await actor1.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public <keygen />
-    else if(mappedCanisterId == 1) createdUserResp = await actor2.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public <keygen />
-    else if(mappedCanisterId == 2) createdUserResp = await actor3.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public <keygen />
+    if(mappedCanisterId == 0) createdUserResp = await actor1.addUser(userInfo.name, userInfo.role, userInfo.address, userInfo.mobileNum, userInfo.emailID, userInfo.aadhaarNum ,pubKey.toString("base64")); // public <keygen />
+    else if(mappedCanisterId == 1) createdUserResp = await actor2.addUser(userInfo.name, userInfo.role, userInfo.address, userInfo.mobileNum, userInfo.emailID, userInfo.aadhaarNum, pubKey.toString("base64")); // public <keygen />
+    else if(mappedCanisterId == 2) createdUserResp = await actor3.addUser(userInfo.name, userInfo.role, userInfo.address, userInfo.mobileNum, userInfo.emailID, userInfo.aadhaarNum, pubKey.toString("base64")); // public <keygen />
 
     console.log(createdUserResp);
     setIsNewUser(false)
@@ -57,6 +57,9 @@ const Registeration = ({ actor1, actor2, actor3, actors, principalId , setIsNewU
         policeInfo.name,
         policeInfo.designation,
         policeInfo.role,
+        policeInfo.stationAddress,
+        policeInfo.stationCode,
+        policeInfo.mobileNum,
         pubKey.toString("base64")
       );
     }
@@ -65,6 +68,9 @@ const Registeration = ({ actor1, actor2, actor3, actors, principalId , setIsNewU
         policeInfo.name,
         policeInfo.designation,
         policeInfo.role,
+        policeInfo.stationAddress,
+        policeInfo.stationCode,
+        policeInfo.mobileNum,
         pubKey.toString("base64")
       );
     }
@@ -72,6 +78,9 @@ const Registeration = ({ actor1, actor2, actor3, actors, principalId , setIsNewU
         policeInfo.name,
         policeInfo.designation,
         policeInfo.role,
+        policeInfo.stationAddress,
+        policeInfo.stationCode,
+        policeInfo.mobileNum,
         pubKey.toString("base64")
       );
     }
@@ -154,6 +163,19 @@ const Registeration = ({ actor1, actor2, actor3, actors, principalId , setIsNewU
                   value={userInfo.emailID}
                   onChange={(ev) => {
                     setUserInfo({ ...userInfo, ["emailID"]: ev.target.value });
+                  }}
+                ></input>
+              </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter your aadhaar number (for verfification)"
+                  type="text"
+                  id="aadhaarNum"
+                  name="aadhaarNum"
+                  value={userInfo.aadhaarNum}
+                  onChange={(ev) => {
+                    setUserInfo({ ...userInfo, ["aadhaarNum"]: ev.target.value });
                   }}
                 ></input>
               </div>

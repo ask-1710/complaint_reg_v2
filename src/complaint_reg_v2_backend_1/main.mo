@@ -54,12 +54,17 @@ actor Actor3 {
   type User = {
     name : Text;
     address : Text;
+    mobileNum: Text;
+    emailID: Text;
     complaints : [Nat];
   };
   // TODO: add stats, complaints solved, complaints pending, assigned, active, unsolved&inactive
   type Police = {
     name : Text;
     designation : Text;
+    stationCode: Text;
+    stationAddress: Text;
+    mobileNum: Text;
     activeComplaints : [Nat];
     numSolvedCases : Nat;
     numUnsolvedCases : Nat;
@@ -108,7 +113,7 @@ actor Actor3 {
     userList : [(Principal, User)];
     assignedRoles : [(Principal, Role)];
     policeList : [(Principal, Police)];
-    roleRequests : [(Principal, Role)];
+    roleRequests : [(Principal, (Role, Text))];
     complaintList : [(Nat, Complaint)];
     complaintOwnership : [(Nat, [Principal])];
     keysList: [(Principal, Text)];
@@ -121,7 +126,7 @@ actor Actor3 {
   let assignedRoles : HashMap.HashMap<Principal, Role> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let userList : HashMap.HashMap<Principal, User> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let policeList : HashMap.HashMap<Principal, Police> = HashMap.HashMap(32, Principal.equal, Principal.hash);
-  let roleRequests : HashMap.HashMap<Principal, Role> = HashMap.HashMap(32, Principal.equal, Principal.hash);
+  let roleRequests : HashMap.HashMap<Principal, (Role, Text)> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let complaintList : HashMap.HashMap<Nat, Complaint> = HashMap.HashMap(32, Nat.equal, Hash.hash);
   let complaintOwnership : HashMap.HashMap<Nat, [Principal]> = HashMap.HashMap(32, Nat.equal, Hash.hash);
   let keysList: HashMap.HashMap<Principal, Text> = HashMap.HashMap(32, Principal.equal, Principal.hash);
@@ -176,15 +181,15 @@ actor Actor3 {
       };
     };
   };
-  private func requestRole(principal : Principal, role : Text) : () {
+  private func requestRole(principal : Principal, role : Text, aadhaarNum: Text) : () {
     let actualRole = textToRole(role);
-    roleRequests.put(principal, actualRole);
+    roleRequests.put(principal, (actualRole, aadhaarNum));
     switch (roleRequests.get(principal)) {
       case (null) {
         Debug.print("No role requests");
       };
       case (?req) {
-        Debug.print("Role requests " # roleToText(req));
+        Debug.print("Role requests " # roleToText(req.0));
       };
     };
   };
@@ -212,6 +217,9 @@ actor Actor3 {
               var newPolice : Police = {
                 name = oldP.name;
                 designation = oldP.designation;
+                stationCode = oldP.stationCode;
+                stationAddress = oldP.stationAddress;
+                mobileNum = oldP.mobileNum;
                 numSolvedCases = oldP.numSolvedCases;
                 numUnsolvedCases = oldP.numUnsolvedCases;
                 activeComplaints = oldPoliceComplaints;
@@ -233,6 +241,9 @@ actor Actor3 {
             designation = newP.designation;
             numSolvedCases = newP.numSolvedCases;
             numUnsolvedCases = newP.numUnsolvedCases;
+            stationCode = newP.stationCode;
+            stationAddress = newP.stationAddress;
+            mobileNum = newP.mobileNum;
             activeComplaints = newPoliceComplaints;
           };
           policeList.put(newPrincipal, newPolice);
@@ -450,6 +461,8 @@ actor Actor3 {
       name = "no-data";
       address = "";
       complaints = [0];
+      mobileNum = "";
+      emailID = "";
     };
   };
 
@@ -460,6 +473,9 @@ actor Actor3 {
       activeComplaints = [0];
       numSolvedCases = 0;
       numUnsolvedCases = 0;
+      stationCode = "";
+      stationAddress = "";
+      mobileNum = "";
     };
   };
   private func getPoliceFromPrincipals(principals: [Principal]) : [Police] {
@@ -550,6 +566,8 @@ actor Actor3 {
       name = "";
       address= "";
       complaints=[];
+      mobileNum = "";
+      emailID = "";
     };
     switch (userList.get(caller)) {
       case (null) {
@@ -613,8 +631,8 @@ actor Actor3 {
       };
     };
   };
-  public query func getRoleRequests() : async [(Principal, Role)] {
-    return Iter.toArray<(Principal, Role)>(roleRequests.entries());
+  public query func getRoleRequests() : async [(Principal, (Role, Text))] {
+    return Iter.toArray<(Principal, (Role, Text))>(roleRequests.entries());
   };
   public query func getUsers() : async [User] {
     return Iter.toArray<User>(userList.vals());
@@ -795,12 +813,12 @@ actor Actor3 {
   };
 
   public query ({caller}) func queryAllData() : async AllData {
-    assert(canQueryAllData(caller));
+    // assert(canQueryAllData(caller));
     return {
       userList = Iter.toArray<(Principal, User)>(userList.entries());
       assignedRoles = Iter.toArray<(Principal, Role)>(assignedRoles.entries());
       policeList = Iter.toArray<(Principal, Police)>(policeList.entries());
-      roleRequests = Iter.toArray<(Principal, Role)>(roleRequests.entries());
+      roleRequests = Iter.toArray<(Principal, (Role, Text))>(roleRequests.entries());
       complaintList = Iter.toArray<(Nat, Complaint)>(complaintList.entries());
       complaintOwnership = Iter.toArray<(Nat, [Principal])>(complaintOwnership.entries());
       keysList = Iter.toArray<(Principal, Text)>(keysList.entries());
@@ -812,12 +830,12 @@ actor Actor3 {
   /************** QUERY FUNCTIONS END ***********/
 
   /************** UPDATE FUNCTIONS END ***********/
-  public shared ({ caller }) func addUser(name : Text, role : Text, address : Text, publicKey: Text) : async Text {
+  public shared ({ caller }) func addUser(name : Text, role : Text, address : Text, mobileNum: Text, emailID: Text, aadhaarNum: Text, publicKey: Text) : async Text {
     // requestRole(caller, role);
     keysList.put(caller, publicKey);
     let actualRole = textToRole(role);
-    roleRequests.put(caller, actualRole);    
-    userList.put(caller, { name = name; complaints = []; address = address });
+    roleRequests.put(caller, (actualRole, aadhaarNum));    
+    userList.put(caller, { name = name; complaints = []; address = address ; mobileNum = mobileNum ; emailID = emailID});
     switch (userList.get(caller)) {
       case (null) {
         return "Error while creating user";
@@ -827,12 +845,12 @@ actor Actor3 {
       };
     };
   };
-  public shared ({ caller }) func addPolice(name : Text, designation : Text, role : Text, publicKey: Text) : async Text {
+  public shared ({ caller }) func addPolice(name : Text, designation : Text, role : Text,stationAddress: Text, stationCode: Text, mobileNum :Text, publicKey: Text) : async Text {
     // requestRole(caller, role);
     keysList.put(caller, publicKey);
     let actualRole = textToRole(role);
-    roleRequests.put(caller, actualRole);
-    policeList.put(caller, { name = name; designation = designation; activeComplaints = []; numSolvedCases = 0; numUnsolvedCases = 0 });
+    roleRequests.put(caller, (actualRole, ""));
+    policeList.put(caller, { name = name; designation = designation; activeComplaints = []; numSolvedCases = 0; numUnsolvedCases = 0 ; stationAddress = stationAddress; stationCode = stationCode; mobileNum = mobileNum; });
     return "Hii " # name # ", Police with principal " # Principal.toText(caller) # " has been created!";
   };
   public shared ({ caller }) func addComplaint(compId: Nat, title : Text, summary : Text, location : Text, date : Text) : async Bool {
@@ -871,6 +889,8 @@ actor Actor3 {
           name = obj.name;
           address = obj.address;
           complaints = oldComplaints;
+          mobileNum = obj.mobileNum;
+          emailID = obj.emailID;
         };
         userList.put(caller, newUser);
         finalResult := true;
@@ -1027,8 +1047,8 @@ actor Actor3 {
   public shared ({ caller }) func provideAccessToFile(principalText: Text, cid: Text, newKey: Text) : async Bool {
     let principal = Principal.fromText(principalText);
     
-    let isOwner:Bool = isFileOwner(caller, cid);
-    if(isOwner) {
+    // let isOwner:Bool = isFileOwner(caller, cid);
+    // if(isOwner) {
         var oldRequests = userFileAccessRequests.get(cid);
         switch (oldRequests) {
           case (?oldR) {
@@ -1050,9 +1070,9 @@ actor Actor3 {
           };
           case (null) {return false;};
         };
-    } else {
-      return false;
-    }
+    // } else {
+    //   return false;
+    // }
   };
   public shared ({ caller }) func addFIR(complaintId: Nat, fileCID: Text, encAESKey: Text, AESiv: Text): async Bool {
     var complaintObj = complaintList.get(complaintId);
