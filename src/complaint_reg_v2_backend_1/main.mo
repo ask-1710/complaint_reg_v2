@@ -12,6 +12,10 @@ import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Time "mo:base/Time";
+import VebTree "mo:veb-tree";
+
+
+let vebTree = VebTree.VebTree.construct();
 
 
 actor Actor3 {
@@ -657,6 +661,8 @@ actor Actor3 {
   };
   public query func getDetailedComplaintInfoByComplaintId(complaintId: Nat) : async ComplaintViewModel {
     var complaintInfo: ?Complaint = complaintList.get(complaintId);
+    bool isCaseStillActive = vebTree.isPartOf(complaintId);
+    if (!isCaseStillActive) return;
     switch(complaintInfo) {
       case null {
         return getDummyComplaintView();
@@ -705,6 +711,59 @@ actor Actor3 {
       };
     };
   };
+
+public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : async ComplaintViewModel {
+    var complaintInfo: ?Complaint = complaintList.get(complaintId);
+    switch(complaintInfo) {
+      case null {
+        return getDummyComplaintView();
+      };
+      case (?info) {
+        var ownershipHistory: [Principal] = [];
+        var ownershipHistory1 = complaintOwnership.get(complaintId);
+        switch(ownershipHistory1) {
+          case null { };
+          case (?oh) { ownershipHistory := oh; };
+        };
+        var complainant: ?User = userList.get(info.complainantPrincipal);
+        var complainantName = "";
+        var complainantAddress = "";
+        switch(complainant) {
+          case null {};
+          case (?user) {
+            complainantName := user.name;  
+            complainantAddress := user.address;
+          };
+        };
+        var complaintView: ComplaintViewModel  = {
+          FIR = info.FIR;
+          chargesheet = info.chargesheet;
+          closureReport = info.closureReport;
+          assignedStation = "";
+          assignedStationCode = "";
+          investigatorPrincipal = Principal.toText(info.investigatorPrincipal);
+          date = info.date;
+          evidence = info.evidence;
+          location = info.location;
+          status = info.status;
+          ownershipHistory = ownershipHistory;
+          summary = info.summary;
+          typee = info.typee;
+          title = info.title;
+          complainantName = complainantName;
+          complainantAddress = complainantAddress;
+          complainantPrincipal = Principal.toText(info.complainantPrincipal);
+          updatedOn = info.updatedOn;
+          FIRDate = info.FIRDate;
+          chargesheetDate= info.chargesheetDate;
+          closureReportDate = info.closureReportDate;
+        };    
+        return complaintView;    
+      };
+    };
+  };
+
+
   public query ({caller}) func getEncAESKeyForDecryption(cid: Text): async UserCIDKey {
     let doesUserHaveKey = doesUserHaveFileAccess(caller, cid);
     if(doesUserHaveKey) {
@@ -856,6 +915,7 @@ actor Actor3 {
   public shared ({ caller }) func addComplaint(compId: Nat, title : Text, summary : Text, location : Text, date : Text) : async Bool {
     let mlResult = "Cognizable";
     var finalResult : Bool = false;
+    vebTree.add(compId);
     var user = userList.get(caller);
     switch (user) {
       case (null) { finalResult := false };
