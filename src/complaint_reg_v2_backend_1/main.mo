@@ -12,7 +12,7 @@ import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Time "mo:base/Time";
-import VebTree "mo:veb-tree";
+import VebTree "vebtree";
 
 
 let vebTree = VebTree.VebTree.construct();
@@ -872,7 +872,7 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
   };
 
   public query ({caller}) func queryAllData() : async AllData {
-    // assert(canQueryAllData(caller));
+    assert(canQueryAllData(caller));
     return {
       userList = Iter.toArray<(Principal, User)>(userList.entries());
       assignedRoles = Iter.toArray<(Principal, Role)>(assignedRoles.entries());
@@ -964,9 +964,9 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
     assignedRoles.put(principal, actualRole);
   };
   public shared ({ caller }) func transferOwnershipTo(complaintId : Nat, newPolice: Text) : async Bool {
-    // if(canTransferEvidence(caller)) {
+    if(canTransferEvidence(caller)) {
     return await transferEvidenceOwnership(Principal.fromText(newPolice), complaintId);
-    // };
+    };
     // return false;
     // try {
     //   var pastOwners = complaintOwnership.get(complaintId);

@@ -1,12 +1,12 @@
 module VebTree {
 
-    public class VebTree {
+    public class VebTree() {
 
-        private var min : ?Nat;
-        private var max : ?Nat;
-        private var sqrtSize : Nat;
-        private var summary : ?VebTree;
-        private var clusters : [?VebTree];
+        private var min=0;
+        private var max=0;
+        private var sqrtSize : Nat=0;
+        private var summary : ?VebTree = null;
+        private var clusters : [?VebTree] = [];
 
         public func construct() : VebTree {
             return {
@@ -36,24 +36,25 @@ module VebTree {
 
         public func add(x : Nat) : VebTree {
             if (min == null) {
-                min = max = x;
+                min :=  x;
+                max :=  x;
             } else {
                 if (x < min) {
                     let tmp = x;
-                    x = min;
-                    min = tmp;
+                    x := min;
+                    min := tmp;
                 };
                 if (sqrtSize > 0) {
                     let i = x / sqrtSize;
                     let j = x % sqrtSize;
                     if (clusters[i] == null) {
-                        clusters[i] = VebTree.construct();
-                        summary = summary.add(i);
+                        clusters[i] := VebTree.construct();
+                        summary := summary.add(i);
                     };
-                    clusters[i] = clusters[i].add(j);
+                    clusters[i] := clusters[i].add(j);
                 };
                 if (x > max) {
-                    max = x;
+                    max := x;
                 };
             };
             return this;
@@ -62,38 +63,39 @@ module VebTree {
         public func delete(x : Nat) : ?VebTree {
             if (min == max) {
                 if (x == min) {
-                    min = max = null;
+                    min := null
+                    max := null;
                     return null;
                 } else {
                     return this;
                 };
             } else if (sqrtSize == 0) {
                 if (x == min) {
-                    min = max;
+                    min := max;
                 } else {
-                    max = min;
+                    max := min;
                 };
                 return this;
             } else {
                 if (x == min) {
                     let firstCluster = summary!.min!;
-                    x = firstCluster * sqrtSize + clusters[firstCluster]!.min!;
-                    min = x;
+                    x := firstCluster * sqrtSize + clusters[firstCluster]!.min!;
+                    min := x;
                 };
                 let i = x / sqrtSize;
                 let j = x % sqrtSize;
                 if (clusters[i] != null) {
-                    clusters[i] = clusters[i].delete(j);
+                    clusters[i] := clusters[i].delete(j);
                     if (clusters[i] == null) {
-                        summary = summary!.delete(i);
+                        summary := summary!.delete(i);
                     };
                 };
                 if (x == max and summary != null) {
                     let maxCluster = summary!.max!;
                     if (maxCluster != null) {
-                        max = maxCluster * sqrtSize + clusters[maxCluster]!.max!;
+                        max := maxCluster * sqrtSize + clusters[maxCluster]!.max!;
                     } else {
-                        max = min;
+                        max := min;
                     };
                 };
                 return this;
@@ -167,42 +169,42 @@ module VebTree {
 };
 
 // this is how you use it
-import VebTree "mo:veb-tree";
-import VebTree "mo:veb-tree";
+// import VebTree "mo:veb-tree";
+// import VebTree "mo:veb-tree";
 
-actor {
-  public func main() : async {
-    let vebTree = VebTree.VebTree.construct();
-    vebTree.add(5);
-    vebTree.add(1);
-    vebTree.add(7);
-    vebTree.add(9);
-    vebTree.add(3);
-    vebTree.delete(7);
-    let isPartOf1 = vebTree.isPartOf(5); // true
-    let isPartOf2 = vebTree.isPartOf(7); // false
-    let successor1 = vebTree.successor(3); // 5
-    let successor2 = vebTree.successor(9); // null
-    let predecessor1 = vebTree.predecessor(5); // 3
-    let predecessor2 = vebTree.predecessor(1); // null
-    // ...
-  }
-}
-actor {
-  public func main() : async {
-    let vebTree = VebTree.VebTree.construct();
-    vebTree.add(5);
-    vebTree.add(1);
-    vebTree.add(7);
-    vebTree.add(9);
-    vebTree.add(3);
-    vebTree.delete(7);
-    let isPartOf1 = vebTree.isPartOf(5); // true
-    let isPartOf2 = vebTree.isPartOf(7); // false
-    let successor1 = vebTree.successor(3); // 5
-    let successor2 = vebTree.successor(9); // null
-    let predecessor1 = vebTree.predecessor(5); // 3
-    let predecessor2 = vebTree.predecessor(1); // null
-    // ...
-  }
-}
+// actor {
+//   public func main() : async {
+//     let vebTree = VebTree.VebTree.construct();
+//     vebTree.add(5);
+//     vebTree.add(1);
+//     vebTree.add(7);
+//     vebTree.add(9);
+//     vebTree.add(3);
+//     vebTree.delete(7);
+//     let isPartOf1 = vebTree.isPartOf(5); // true
+//     let isPartOf2 = vebTree.isPartOf(7); // false
+//     let successor1 = vebTree.successor(3); // 5
+//     let successor2 = vebTree.successor(9); // null
+//     let predecessor1 = vebTree.predecessor(5); // 3
+//     let predecessor2 = vebTree.predecessor(1); // null
+//     // ...
+//   }
+// }
+// actor {
+//   public func main() : async {
+//     let vebTree = VebTree.VebTree.construct();
+//     vebTree.add(5);
+//     vebTree.add(1);
+//     vebTree.add(7);
+//     vebTree.add(9);
+//     vebTree.add(3);
+//     vebTree.delete(7);
+//     let isPartOf1 = vebTree.isPartOf(5); // true
+//     let isPartOf2 = vebTree.isPartOf(7); // false
+//     let successor1 = vebTree.successor(3); // 5
+//     let successor2 = vebTree.successor(9); // null
+//     let predecessor1 = vebTree.predecessor(5); // 3
+//     let predecessor2 = vebTree.predecessor(1); // null
+//     // ...
+//   }
+// }

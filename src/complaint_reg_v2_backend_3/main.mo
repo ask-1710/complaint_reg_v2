@@ -12,6 +12,10 @@ import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Time "mo:base/Time";
+import VebTree "vebtree";
+
+
+let vebTree = VebTree.VebTree.construct();
 
 
 actor Actor3 {
@@ -657,6 +661,59 @@ actor Actor3 {
   };
   public query func getDetailedComplaintInfoByComplaintId(complaintId: Nat) : async ComplaintViewModel {
     var complaintInfo: ?Complaint = complaintList.get(complaintId);
+    bool isCaseStillActive = vebTree.isPartOf(complaintId);
+    if (!isCaseStillActive) return;
+    switch(complaintInfo) {
+      case null {
+        return getDummyComplaintView();
+      };
+      case (?info) {
+        var ownershipHistory: [Principal] = [];
+        var ownershipHistory1 = complaintOwnership.get(complaintId);
+        switch(ownershipHistory1) {
+          case null { };
+          case (?oh) { ownershipHistory := oh; };
+        };
+        var complainant: ?User = userList.get(info.complainantPrincipal);
+        var complainantName = "";
+        var complainantAddress = "";
+        switch(complainant) {
+          case null {};
+          case (?user) {
+            complainantName := user.name;  
+            complainantAddress := user.address;
+          };
+        };
+        var complaintView: ComplaintViewModel  = {
+          FIR = info.FIR;
+          chargesheet = info.chargesheet;
+          closureReport = info.closureReport;
+          assignedStation = "";
+          assignedStationCode = "";
+          investigatorPrincipal = Principal.toText(info.investigatorPrincipal);
+          date = info.date;
+          evidence = info.evidence;
+          location = info.location;
+          status = info.status;
+          ownershipHistory = ownershipHistory;
+          summary = info.summary;
+          typee = info.typee;
+          title = info.title;
+          complainantName = complainantName;
+          complainantAddress = complainantAddress;
+          complainantPrincipal = Principal.toText(info.complainantPrincipal);
+          updatedOn = info.updatedOn;
+          FIRDate = info.FIRDate;
+          chargesheetDate= info.chargesheetDate;
+          closureReportDate = info.closureReportDate;
+        };    
+        return complaintView;    
+      };
+    };
+  };
+
+public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : async ComplaintViewModel {
+    var complaintInfo: ?Complaint = complaintList.get(complaintId);
     switch(complaintInfo) {
       case null {
         return getDummyComplaintView();
@@ -813,7 +870,7 @@ actor Actor3 {
   };
 
   public query ({caller}) func queryAllData() : async AllData {
-    // assert(canQueryAllData(caller));
+    assert(canQueryAllData(caller));
     return {
       userList = Iter.toArray<(Principal, User)>(userList.entries());
       assignedRoles = Iter.toArray<(Principal, Role)>(assignedRoles.entries());
@@ -856,6 +913,7 @@ actor Actor3 {
   public shared ({ caller }) func addComplaint(compId: Nat, title : Text, summary : Text, location : Text, date : Text) : async Bool {
     let mlResult = "Cognizable";
     var finalResult : Bool = false;
+    vebTree.add(compId);
     var user = userList.get(caller);
     switch (user) {
       case (null) { finalResult := false };
@@ -904,9 +962,9 @@ actor Actor3 {
     assignedRoles.put(principal, actualRole);
   };
   public shared ({ caller }) func transferOwnershipTo(complaintId : Nat, newPolice: Text) : async Bool {
-    // if(canTransferEvidence(caller)) {
+    if(canTransferEvidence(caller)) {
     return await transferEvidenceOwnership(Principal.fromText(newPolice), complaintId);
-    // };
+    };
     // return false;
     // try {
     //   var pastOwners = complaintOwnership.get(complaintId);
