@@ -659,8 +659,8 @@ actor Actor3 {
   };
   public query func getDetailedComplaintInfoByComplaintId(complaintId: Nat) : async ComplaintViewModel {
     var complaintInfo: ?Complaint = complaintList.get(complaintId);
-    bool isCaseStillActive = vebTree.isPartOf(complaintId);
-    if (!isCaseStillActive) return;
+    var isCaseStillActive: Bool = vebTree.isPartOf(complaintId);
+    if (isCaseStillActive == false) return;
     switch(complaintInfo) {
       case null {
         return getDummyComplaintView();
@@ -963,7 +963,7 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
     if(canTransferEvidence(caller)) {
     return await transferEvidenceOwnership(Principal.fromText(newPolice), complaintId);
     };
-    // return false;
+    return false;
     // try {
     //   var pastOwners = complaintOwnership.get(complaintId);
     //   switch (pastOwners) {
