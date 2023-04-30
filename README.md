@@ -1,4 +1,4 @@
-# complaint_reg_v2
+# Criminal Investigation and Complaint Tracking using Blockchain
 
 Welcome to Criminal Investigation and Complaint Tracking using Blockchain
 
