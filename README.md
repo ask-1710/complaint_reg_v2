@@ -69,6 +69,7 @@ If you want to run the project locally, you can use the following commands:
 ```bash
 cd complaint_reg_v2/
 
+```
 # Starts the replica, running in the background
 dfx start --background
 
