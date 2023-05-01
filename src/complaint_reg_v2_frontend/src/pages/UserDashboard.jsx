@@ -33,10 +33,6 @@ const UserDashboard = ({
     unsolved: { step: 5, badgeText: "Unsolved" },
   };
 
-  // const location = useLocation();
-  // const { principalId } = location?.state || {};
-  // const { isConnected } = location?.state || {};
-
   useEffect(() => {
     setIsSetupComplete(true);
     setIsNewUser(false, "user");
@@ -48,7 +44,6 @@ const UserDashboard = ({
   }, [actor1, actor2, actor3]);
 
   async function getUserDetails() {
-    // console.log("user is :"+principalId+":getUserDetails");
     const principalId = window.ic.plug.sessionManager.sessionData.principalId;
     if(principalId == "") return;
     const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId);
@@ -68,21 +63,6 @@ const UserDashboard = ({
       user = await actor3.getUserDetails();
       userComplaints = await actor3.getUserComplaints();
     }
-    
-    // const user = {
-    //   principal: "ihdq3043c109j4",
-    //   name: "rt",
-    //   address: "chennai",
-    //   complaintIds: [0, 1],
-    // };
-    // const userComplaints = [
-    //   [0, { title: "abc", summary: "sum", date: "12/3/22", location: "delhi" ,  status:{firregisteration : null} }],
-    //   [1, { title: "abc", summary: "sum", date: "12/3/22", location: "delhi" ,  status:{finalreportfiling : null} }],
-    //   [2, { title: "abc", summary: "sum", date: "12/3/22", location: "delhi" ,  status:{solved : null} }],
-    //   [3, { title: "abc", summary: "sum", date: "12/3/22", location: "delhi" ,  status:{unsolved : null} }],
-    //   [4, { title: "abc", summary: "sum", date: "12/3/22", location: "delhi" ,  status:{finalreportfiling : null} }],
-    // ];
-
     setUser(user[1]);
     setComplaints(userComplaints);
     setIsUserSet(true);

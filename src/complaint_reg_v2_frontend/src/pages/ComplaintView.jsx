@@ -18,7 +18,6 @@ const ComplaintView = ({
   setIsConnected,
   setIsNewUser,
 }) => {
-  //   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true);
   const [complaintInfo, setComplaintInfo] = useState(null);
   const [registeredDaysBefore, setRegisteredDaysBefore] = useState(null);

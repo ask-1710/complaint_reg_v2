@@ -7,11 +7,6 @@ import { complaint_reg_v2_backend_3 } from '../../../declarations/complaint_reg_
 import { complaint_reg_v2_load_balancer } from '../../../declarations/complaint_reg_v2_load_balancer';
 
 var eccrypto = require("eccrypto");
-
-// var EC = require('elliptic').ec;
-// const FileSaver = require('file-saver');
-// const crypto = require("crypto");
-// import * as eccryptoJS from 'eccrypto-js';
 const CryptoJS = require("crypto-js")
 
 const FileFrame = ({actors, actor, createActor1, createActor2, createActor3, actor1, actor2, actor3}) => {
@@ -153,11 +148,9 @@ const FileFrame = ({actors, actor, createActor1, createActor2, createActor3, act
         const base46EncData = "U2Fsd" + encData.split("U2Fsd")[1];
         const decrypted = CryptoJS.AES.decrypt(base46EncData, aesKey);
         var decryptedString = CryptoJS.enc.Base64.stringify(decrypted);
-        // console.log(decryptedString)
         console.log("decrypted")
         setIsDecrypted(true);
         setDecryptedString(decryptedString);
-        // CPU Intensive BUT CANNOT DOWNLOAD PDF
         let pdfWindow = window.open("")
         pdfWindow.oncontextmenu=function(){return false;}
         pdfWindow.document.write("<iframe width='100%' height='100%' src='data:application/pdf;base64," +
@@ -299,27 +292,3 @@ const FileFrame = ({actors, actor, createActor1, createActor2, createActor3, act
 
 export default FileFrame;
 
-
-/*
-
-TRIED METHODS
-        // const url = "data:application/pdf;base64,"+encodeURI(decryptedString)+"#toolbar=0&navpanes=0";
-
-        // FIND  A WAY TO AVOID DOWNLOAD
-        // const r = await fetch(`data:application/pdf;base64,${encodeURI(decryptedString)}`);
-        // const blob = await r.blob();
-        // const url =  URL.createObjectURL(blob);
-        // window.open(url);
-        // console.log(url);
-        // Convert to array buffer, download pdf
-        // var bytes = [];
-        // while (decryptedString.length >= 8) { 
-        //     bytes.push(parseInt(decryptedString.substring(0, 8), 16));
-        //     decryptedString = decryptedString.substring(8, decryptedString.length);
-        // }
-        // const outFile = new Blob(bytes, {type: "application/pdf"});
-        // FileSaver.saveAs(outFile, "out.pdf");
-
-
-
-*/

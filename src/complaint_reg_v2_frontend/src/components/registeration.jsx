@@ -3,7 +3,6 @@ import Switch from "react-switch";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
-// import * as eccryptoJS from 'eccrypto-js';
 var eccrypto = require("eccrypto");
 const CryptoJS = require("crypto-js")
 
@@ -203,46 +202,6 @@ const Registeration = ({ actor1, actor2, actor3, actors, principalId , setIsNewU
                   }}
                 ></input>
               </div>
-              {/* <div className="row mt-2">
-                <div className="col-4">
-                    <p className="placeholder-text-color">Enter Role</p>
-                </div>
-                <div className="col-6">
-                <input
-                  type="radio"
-                  className="col-6"
-                  name="policeRole"
-                  onChange={(ev) => {
-                    if (ev.target.checked) {
-                      setPoliceInfo({ ...policeInfo, ["role"]: "creator" });
-                    }
-                  }}
-                />
-                Creator
-                <input
-                  type="radio"
-                  className="col-6"
-                  name="policeRole"
-                  onChange={(ev) => {
-                    if (ev.target.checked) {
-                      setPoliceInfo({ ...policeInfo, ["role"]: "owner" });
-                    }
-                  }}
-                />
-                Owner            
-                <input
-                  type="radio"
-                  name="policeRole"
-                  className="col-6"
-                  onChange={(ev) => {
-                    if (ev.target.checked) {
-                      setPoliceInfo({ ...policeInfo, ["role"]: "general" });
-                    }
-                  }}
-                />
-                General
-              </div>
-              </div> */}
               <div className="row mt-2 justify-content-center">
                 <input
                   type="type"

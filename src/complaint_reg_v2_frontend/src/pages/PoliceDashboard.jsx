@@ -93,8 +93,6 @@ const PoliceDashboard = ({
     for(const complaint of complaints) {
       complaint[1].isInvestigator = (principalId == complaint[1].investigatorPrincipal);
     }
-    // const complaints=[[0, {title: "abc", summary: "sum", date: "12/3/22", location: "delhi"}],
-    // [1, {title: "abc", summary: "sum", date: "12/3/22", location: "delhi"}]];
     setComplaints(complaints);
     setIsComplaintSet(true);
   }
@@ -241,18 +239,6 @@ const PoliceDashboard = ({
     
   }
 
-  // async function checkIfInvestigator(complaint) {
-  //   // const complaintCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(compaincomplaintId);
-  //   // if(complaintCanister == 0) await createActor1();
-  //   // else if(complaintCanister == 1) await createActor2();
-  //   // else if(complaintCanister == 2) await createActor3(); 
-  //   const principalId = window.ic.plug.sessionManager.sessionData.principalId;
-  //   // if(principalId == complaint)
-  //   // const isInvestigator = await actor.isInvestigatorForComplaint(complaintId);
-  //   // setIsInvestigator(isInvestigator);
-  //   // console.log("Is investigator?" + isInvestigator);
-  //   return isInvestigator;
-  // }
 
   async function showSave(updated) {
     setShowSaveButton(updated!=originalStatus);
@@ -264,31 +250,6 @@ const PoliceDashboard = ({
 
     FileSaver.saveAs(file, fileName);
     
-  }
-
-  function stringifyJSON1(obj) {
-    console.log(obj);
-    if(typeof obj == "bigint") {
-      return obj.toString();
-    }
-    // Base case: handle primitive types
-    if (typeof obj !== 'object' || obj === null) {
-      return JSON.stringify(obj);
-    }
-    // arrays
-    // const newObj = Array.isArray(obj) ? [] : {};
-
-    const newObj = Array.isArray(obj) ? obj : {};
-    
-    // Recursive case: handle objects
-    const keys = Object.keys(obj);  
-    keys.forEach((key) => {
-      newObj[key] = stringifyJSON(obj[key]);
-    });
-    console.log("If json ? ");
-    console.log(newObj);
- 
-    return JSON.stringify(newObj);
   }
 
   function stringifyJSON(obj) {

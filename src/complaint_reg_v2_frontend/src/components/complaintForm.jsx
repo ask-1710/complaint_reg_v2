@@ -77,18 +77,6 @@ const ComplaintForm = ({createActor, actors, actor1,actor2,actor3, createActor1,
                     })
                   }
               </select>
-              {/* <input
-                type="text"
-                className="form-control col-6"
-                placeholder="Select subject"
-                value={newComplaint.title}
-                onChange={(e) => {
-                  setNewComplaint({
-                    ...newComplaint,
-                    ["title"]: e.target.value,
-                  });
-                }}
-              ></input> */}
             </div>
 
             <div className="row mt-2 justify-content-center">

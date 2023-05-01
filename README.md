@@ -2,11 +2,11 @@
 
 Welcome to Criminal Investigation and Complaint Tracking using Blockchain
 
-This project is developed by Aarthi Suresh Kumar and Anirudh TN, final year students of SSN College of Engineering and submitted as their final year project. 
+This project is developed and submitted by Aarthi Suresh Kumar and Anirudh TN, final year students at SSN College of Engineering, as their final year project.
 
-The project aims to revolutionalize complaint evidence management and sharing ensuring high levels of security and reliability using blockchain.
+It aims to revolutionalize complaint evidence management and sharing by ensuring high levels of security and reliability using blockchain.
 
-It is developed in Internet Computer Blockchain and the canisters/smart contracts are coded in motoko, language developed for building smart contracts in internet computer by Dfinity.
+This project runs on Internet Computer Blockchain and the canisters/smart contracts are developed in Motoko, frontend is developed using React.
 
 
 Link referred while working on the project:
@@ -19,7 +19,50 @@ Link referred while working on the project:
 
 
 
-## Running the project locally
+# INSTALLATION GUIDE
+
+Use only versions node v18.10.0 and npm v8.19.2 to run this project
+
+Install dfx 0.12.1 by running the following command in the terminal
+
+Run 
+```bash
+DFX_VERSION=0.12.1 sh -ci "$(curl -sSL https://internetcomputer.org/install.sh)"
+```
+Install IPFS cli to spawn an IPFS node locally
+
+```bash
+# to install cli to spawn local ipfs node 
+npm i --location=global ipfs
+````
+
+
+Run these two commnads:
+```bash
+jsipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["http://127.0.0.1:5002", "http://localhost:3000", "http://127.0.0.1:5001", "https://webui.ipfs.io"]'
+
+jsipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "POST"]'
+
+```
+
+Command to run to spawn a node
+```bash
+jsipfs daemon
+```
+
+To install ipfs-http-client to connect this application to the local IPFS node
+```bash
+# in the root directory of the project
+npm i ipfs-http-client
+```
+
+Add the chrome extension for plug wallet. Create an account if required or import the secret keys to import an existing wallet.
+
+
+
+
+
+# RUN THE PROJECT
 
 If you want to run the project locally, you can use the following commands:
 
@@ -37,43 +80,14 @@ npm start
 
 # Start the IPFS local node 
 jsipfs daemon
+
+# To stop the local network
+dfx stop
 ```
 
-<!-- Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`. -->
+<!-- Once the job completes, the application will be available at `http://localhost:4943?canisterId={asset_canister_id}`. -->
 
-The above commands will deploy and run three backend canisters, one load balancer canister, a frontend canister in port 4943.
+The above commands will deploy and run three backend canisters, one load balancer canister, and a frontend canister and starts a webserver at port 4943.
 
-It will start a server at `http://localhost:8080`, proxying API requests to the replica at port 4943.
-
-
-# INSTALLATION GUIDE
-
-Use only node v18.10.0 and npm v8.19.2
-
-Install dfx 0.12.1
-
-Run 
-
-**DFX_VERSION=0.12.1 sh -ci "$(curl -sSL https://internetcomputer.org/install.sh)"**
-
-Follow the instructions above to get started with the project
-
-**npm i --location=global ipfs**  -> to install cli to spawn local ipfs node 
-
-Run these two commnads:
-
-jsipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["http://127.0.0.1:5002", "http://localhost:3000", "http://127.0.0.1:5001", "https://webui.ipfs.io"]'
-jsipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "POST"]'
-
-
-Command to run to spawn a node
-
-**jsipfs daemon** -> command to run
-
-
-To install ipfs-http-client to connect this application to the local IPFS node
-
-**npm i ipfs-http-client** -> in the root directory of the project
-
-
+The server for the frontend will run at `http://localhost:8080`, proxying API requests to the replica at port 4943.
 

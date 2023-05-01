@@ -1,4 +1,3 @@
-// import logo from './logo.svg';
 import Registeration from "./components/registeration";
 import PoliceDashboard from "./pages/PoliceDashboard";
 import React, { useState, useEffect } from "react";
@@ -64,7 +63,6 @@ const App = function () {
       if (publicKey) {
         setIsConnected(true);
         setPublicKey(publicKey);
-        // const principalId = await window.ic.plug.agent.getPrincipal();
         const principalId = window.ic.plug.sessionManager.sessionData.principalId;
 
         if (principalId) {

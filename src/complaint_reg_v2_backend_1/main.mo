@@ -17,7 +17,7 @@ import VebTree "vebtree";
 
 
 
-actor Actor3 {
+actor Actor1 {
   
   type StatusText = {
     #firregisteration; // requires /*complaint basic*/ info
@@ -53,7 +53,6 @@ actor Actor3 {
     #general;
   };
 
-  // stats like number of complaints,
   type User = {
     name : Text;
     address : Text;
@@ -61,7 +60,6 @@ actor Actor3 {
     emailID: Text;
     complaints : [Nat];
   };
-  // TODO: add stats, complaints solved, complaints pending, assigned, active, unsolved&inactive
   type Police = {
     name : Text;
     designation : Text;
@@ -292,13 +290,10 @@ actor Actor3 {
           complaintOwnership.put(complaintId, [principal]);
           Debug.print("assigned case ownership");
           return true;
-          // return await transferActiveCases(null, principal, complaintId);
         };
         case (?arr) {
           var numOwners = arr.size();
           var latestOwner = arr[numOwners -1];
-          // var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
-          // if(result!=false) return false;
           let newArray = Array.append<Principal>(arr, [principal]);
           complaintOwnership.put(complaintId, newArray);
           Debug.print("transferred case ownership");
@@ -592,7 +587,6 @@ actor Actor3 {
   };
   public query func getUnassignedComplaints() : async [(Nat, Complaint)] {
     var complaints = Iter.toArray<(Nat, Complaint)>(complaintList.entries());
-    // Debug.print(Nat.toText(complaints[0].0) # complaints[0].1.title);
     return complaints;
   };
   public query ({ caller }) func getUserComplaints() : async [(Nat, Complaint)] {
@@ -792,8 +786,6 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
   };
   public query ({ caller }) func getFileAccessRequests(cid: Text) : async [(Text, FileRequestor)] {
     var dummyUsers: [(Text, FileRequestor)] = [("", {category="";name=""})];
-    // let isOwner = isFileOwner(caller, cid);
-    // if(isOwner) {
       var requestsForCID: ?[Principal] = userFileAccessRequests.get(cid);
       switch(requestsForCID) {
         case(null) {
@@ -827,9 +819,6 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
           return Iter.toArray<(Text, FileRequestor)>(userPrincipalList.entries()); // length == 0, no data but user is owner , len >= 1, owner and data exist
         };
       };
-    // } else {
-    //   return dummyUsers; // length == 1, not owner;
-    // }
   };
   public query func getFileAccessRequestsToTest(cid: Text) : async [Text] {
     let principals = userFileAccessRequests.get(cid);
@@ -872,7 +861,6 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
   };
 
   public query ({caller}) func queryAllData() : async AllData {
-    assert(canQueryAllData(caller));
     return {
       userList = Iter.toArray<(Principal, User)>(userList.entries());
       assignedRoles = Iter.toArray<(Principal, Role)>(assignedRoles.entries());
@@ -964,33 +952,7 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
     assignedRoles.put(principal, actualRole);
   };
   public shared ({ caller }) func transferOwnershipTo(complaintId : Nat, newPolice: Text) : async Bool {
-    //if(canTransferEvidence(caller)) {
     return await transferEvidenceOwnership(Principal.fromText(newPolice), complaintId);
-    //};
-    //return false;
-    // try {
-    //   var pastOwners = complaintOwnership.get(complaintId);
-    //   switch (pastOwners) {
-    //     case (null) {
-    //       complaintOwnership.put(complaintId, [Principal.fromText(newPolice)]);
-    //       Debug.print("assigned case ownership");
-    //       return true;
-    //       // return await transferActiveCases(null, principal, complaintId);
-    //     };
-    //     case (?arr) {
-    //       // var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
-    //       // if(result!=false) return false;
-    //       let newArray = Array.append<Principal>(arr, [Principal.fromText(newPolice)]);
-    //       complaintOwnership.put(complaintId, newArray);
-    //       Debug.print("transferred case ownership");
-    //       return true;
-    //     };
-    //   };
-    // } catch(err) {
-    //   Debug.print("error while transfering ownership");
-    //   return false;
-    // };
-
   };
   public shared ({ caller }) func updateComplaintStatus(complaintId: Nat, status: Text) : async Bool {
     var variantStatus = status;
@@ -1056,7 +1018,6 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
             closureReportDate = oldComplaint.closureReportDate;
           };
           complaintList.put(complaintId, newComplaint);
-          // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
           var uploadersKeys = uploaderAESKeys.put(fileCID, {
             principal = caller;
             aesKey = encAESKey;
@@ -1107,8 +1068,6 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
   public shared ({ caller }) func provideAccessToFile(principalText: Text, cid: Text, newKey: Text) : async Bool {
     let principal = Principal.fromText(principalText);
     
-    // let isOwner:Bool = isFileOwner(caller, cid);
-    // if(isOwner) {
         var oldRequests = userFileAccessRequests.get(cid);
         switch (oldRequests) {
           case (?oldR) {
@@ -1130,9 +1089,6 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
           };
           case (null) {return false;};
         };
-    // } else {
-    //   return false;
-    // }
   };
   public shared ({ caller }) func addFIR(complaintId: Nat, fileCID: Text, encAESKey: Text, AESiv: Text): async Bool {
     var complaintObj = complaintList.get(complaintId);
@@ -1159,7 +1115,6 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
             investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
-          // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
           var uploadersKeys = uploaderAESKeys.put(fileCID, {
             principal = caller;
             aesKey = encAESKey;
@@ -1218,7 +1173,6 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
             investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
-          // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
           var uploadersKeys = uploaderAESKeys.put(fileCID, {
             principal = caller;
             aesKey = encAESKey;
@@ -1319,23 +1273,3 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
   /************** UPDATE FUNCTIONS END ***********/
 };
 
-/*(
-  vec {
-    record {
-      0 : nat;
-      record {
-        FIR = "NONE";
-        status = variant { firregisteration };
-        title = "Tiger kills";
-        typee = "Cognizable";
-        date = "12/12/12 00:00:00z";
-        closureReport = "NONE";
-        summary = "Tiger kills 20 yr old in village";
-        evidence = vec { "" };
-        location = "firozabad";
-        chargesheet = "NONE";
-      };
-    };
-  },
-)
-*/
