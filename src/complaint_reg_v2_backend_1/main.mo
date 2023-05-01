@@ -12,7 +12,7 @@ import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Time "mo:base/Time";
-// import VebTree "vebtree";
+import VebTree "vebtree";
 
 
 
@@ -136,7 +136,7 @@ actor Actor3 {
   let uploaderAESKeys: HashMap.HashMap<Text, EncKey> = HashMap.HashMap(32, Text.equal, Text.hash); // uploader's keys for a file
   let userAESKeys: HashMap.HashMap<Principal, [UserCIDKey]> = HashMap.HashMap(32, Principal.equal, Principal.hash); // keys for files user has access to
   let userFileAccessRequests : HashMap.HashMap<Text, [Principal]> = HashMap.HashMap(32, Text.equal, Text.hash); // requests for each cid
-  // let vebTree = VebTree.VebTree.construct();
+  let vebTree = VebTree.VebTree.construct();
 
   /************ ROLES HELPERS START *************/
   private func getRole(principal : Principal) : ?Role {
@@ -661,8 +661,8 @@ actor Actor3 {
   };
   public query func getDetailedComplaintInfoByComplaintId(complaintId: Nat) : async ComplaintViewModel {
     var complaintInfo: ?Complaint = complaintList.get(complaintId);
-    // var isCaseStillActive: Bool = vebTree.isPartOf(complaintId);
-    // if (isCaseStillActive == false) return;
+    var isCaseStillActive: Bool = vebTree.isPartOf(complaintId);
+    if (isCaseStillActive == false) return;
     switch(complaintInfo) {
       case null {
         return getDummyComplaintView();
@@ -915,7 +915,7 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
   public shared ({ caller }) func addComplaint(compId: Nat, title : Text, summary : Text, location : Text, date : Text) : async Bool {
     let mlResult = "Cognizable";
     var finalResult : Bool = false;
-    // vebTree.add(compId);
+    vebTree.add(compId);
     var user = userList.get(caller);
     switch (user) {
       case (null) { finalResult := false };
