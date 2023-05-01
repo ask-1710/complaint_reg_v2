@@ -152,7 +152,7 @@ const App = function () {
             state: { actor: actor, principalId: principalId },
           });
         }
-        if (isNew[1] == "police" || isNew[1]=='admin') {
+        if (isNew[1] == "police" || isNew[1]=='admin' || isNew[1] == "investigator") {
           setIsSetupComplete(true);
           setIsNewUser(isNew);
           navigate("/policedashboard", {
