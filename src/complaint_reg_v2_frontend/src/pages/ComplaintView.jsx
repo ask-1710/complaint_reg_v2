@@ -1,3 +1,4 @@
+import "react-date-picker/dist/DatePicker.css"
 import React, { useEffect, useState } from "react";
 import { Route, Routes, useLocation, useParams } from "react-router-dom";
 import Spinner from "react-bootstrap/Spinner";
