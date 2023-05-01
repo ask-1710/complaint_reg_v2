@@ -960,10 +960,10 @@ public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : a
     assignedRoles.put(principal, actualRole);
   };
   public shared ({ caller }) func transferOwnershipTo(complaintId : Nat, newPolice: Text) : async Bool {
-    if(canTransferEvidence(caller)) {
+    //if(canTransferEvidence(caller)) {
     return await transferEvidenceOwnership(Principal.fromText(newPolice), complaintId);
-    };
-    return false;
+    //};
+    //return false;
     // try {
     //   var pastOwners = complaintOwnership.get(complaintId);
     //   switch (pastOwners) {
