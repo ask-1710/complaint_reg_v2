@@ -53,27 +53,31 @@ Use only node v18.10.0 and npm v8.19.2
 Install dfx 0.12.1
 
 Run 
-
-**DFX_VERSION=0.12.1 sh -ci "$(curl -sSL https://internetcomputer.org/install.sh)"**
-
+```bash
+DFX_VERSION=0.12.1 sh -ci "$(curl -sSL https://internetcomputer.org/install.sh)"
+```
 Follow the instructions above to get started with the project
-
-**npm i --location=global ipfs**  -> to install cli to spawn local ipfs node 
-
+```bash
+# to install cli to spawn local ipfs node 
+npm i --location=global ipfs
+````
 Run these two commnads:
-
+```bash
 jsipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["http://127.0.0.1:5002", "http://localhost:3000", "http://127.0.0.1:5001", "https://webui.ipfs.io"]'
+
 jsipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "POST"]'
 
+```
 
 Command to run to spawn a node
-
-**jsipfs daemon** -> command to run
-
+```bash
+jsipfs daemon
+```
 
 To install ipfs-http-client to connect this application to the local IPFS node
-
-**npm i ipfs-http-client** -> in the root directory of the project
-
+```bash
+# in the root directory of the project
+npm i ipfs-http-client
+```
 
 
