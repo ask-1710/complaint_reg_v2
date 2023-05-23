@@ -2,19 +2,21 @@ import React, { useEffect, useState } from "react";
 import Spinner from "react-bootstrap/Spinner";
 import { Badge } from "react-bootstrap";
 import { useLocation, useNavigate } from "react-router-dom";
-import { idlFactory } from "../../../declarations/complaint_reg_v2_backend";
-import { Card } from "../../../../node_modules/react-bootstrap/esm/index";
-import CardHeader from "../../../../node_modules/react-bootstrap/esm/CardHeader";
 import ComplaintForm from "../components/complaintForm";
+import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
 
 const UserDashboard = ({
-  actor,
+  actors,
   setIsConnected,
-  createActor,
+  createActor1,
+  actor1,
+  actor2, 
+  actor3,
+  createActor2,
+  createActor3,
   setIsNewUser,
   setIsSetupComplete,
 }) => {
-  const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";  
   const navigate = useNavigate();
   const [user, setUser] = useState({
     name: "",
@@ -31,26 +33,42 @@ const UserDashboard = ({
     unsolved: { step: 5, badgeText: "Unsolved" },
   };
 
-  const location = useLocation();
-  const { principalId } = location?.state || {};
-  const { isConnected } = location?.state || {};
+  // const location = useLocation();
+  // const { principalId } = location?.state || {};
+  // const { isConnected } = location?.state || {};
 
   useEffect(() => {
     setIsSetupComplete(true);
     setIsNewUser(false, "user");
     setIsConnected(true);
-    if (actor == "") createActor();
   }, []);
 
   useEffect(() => {
-    if (!isUserSet && actor != "") getUserDetails();
-  }, [actor]);
+    if (!isUserSet) getUserDetails();
+  }, [actor1, actor2, actor3]);
 
   async function getUserDetails() {
     // console.log("user is :"+principalId+":getUserDetails");
-    const user = await actor.getUserDetails();
-    const userComplaints = await actor.getUserComplaints();
-
+    const principalId = window.ic.plug.sessionManager.sessionData.principalId;
+    if(principalId == "") return;
+    const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId);
+    console.log("mapped canister: " + mappedCanister);
+    let user 
+    let userComplaints
+    if(mappedCanister == 0) {
+      user = await actor1.getUserDetails();
+      userComplaints = await actor1.getUserComplaints();  
+    }
+    else if(mappedCanister == 1) {
+      console.log(actor2);
+      user = await actor2.getUserDetails();
+      userComplaints = await actor2.getUserComplaints();
+    }
+    else if(mappedCanister == 2){
+      user = await actor3.getUserDetails();
+      userComplaints = await actor3.getUserComplaints();
+    }
+    
     // const user = {
     //   principal: "ihdq3043c109j4",
     //   name: "rt",
@@ -172,7 +190,7 @@ const UserDashboard = ({
             <div id="anchor" className="new-section-container">
               <div className="new-section-center">
                 <div className="mb-5">
-                  <ComplaintForm actor={actor} createActor={createActor} />
+                  <ComplaintForm actors={actors} actor1={actor1} actor2={actor2} actor3={actor3} createActor1={createActor1} createActor2={createActor2} createActor3={createActor3} />
                 </div>
                 <div className="mt-4 d-flex flex-row-reverse">
                   <button

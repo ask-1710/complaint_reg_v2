@@ -5,12 +5,13 @@ import React, { useState, useEffect } from "react";
 import UserDashboard from "./pages/UserDashboard";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { complaint_reg_v2_backend } from "../../declarations/complaint_reg_v2_backend";
-import { idlFactory } from "../../declarations/complaint_reg_v2_backend";
+import {canisterId as canisterId1, complaint_reg_v2_backend_1, idlFactory as idlFactory1} from "../../declarations/complaint_reg_v2_backend_1";
+import {canisterId as canisterId2, complaint_reg_v2_backend_2, idlFactory as idlFactory2} from "../../declarations/complaint_reg_v2_backend_2";
+import {canisterId as canisterId3, complaint_reg_v2_backend_3, idlFactory as idlFactory3} from "../../declarations/complaint_reg_v2_backend_3";
+import {canisterId as canisterIdLB, complaint_reg_v2_load_balancer, idlFactory as idlFactoryLB} from "../../declarations/complaint_reg_v2_load_balancer";
+
 import ComplaintView from "./pages/ComplaintView";
 import FileFrame from "./components/fileFrame";
-const CANISTER_ID = process.env.COMPLAINT_REG_V2_BACKEND_CANISTER_ID;
-const prin = complaint_reg_v2_backend.principalId;
 const App = function () {
   const [actor, setActor] = useState("");
   const [isConnected, setIsConnected] = useState(false);
@@ -18,15 +19,20 @@ const App = function () {
   const [publicKey, setPublicKey] = useState("");
   const [isSetupComplete, setIsSetupComplete] = useState(false);
   const [isNewUser, setIsNewUser] = useState([true, ""]);
+  const [actors, setActors] = useState([]);
+  const [actor1, setActor1] = useState("");
+  const [actor2, setActor2] = useState("");
+  const [actor3, setActor3] = useState("");
   const navigate = useNavigate();
+  
 
-  const nnsCanisterId = CANISTER_ID;
-  const whitelist = [nnsCanisterId];
+
+  const whitelist = [process.env.COMPLAINT_REG_V2_BACKEND_1_CANISTER_ID, process.env.COMPLAINT_REG_V2_BACKEND_2_CANISTER_ID, process.env.COMPLAINT_REG_V2_BACKEND_3_CANISTER_ID, process.env.COMPLAINT_REG_V2_LOAD_BALANCER_CANISTER_ID];
   const host = "http://127.0.0.1:4943";
   const pathname = useLocation().pathname;
 
   useEffect(() => {
-    if (isConnected) createActor();
+    if (isConnected && actor=="") createActors();
   }, [isConnected]);
 
   useEffect(() => {
@@ -35,16 +41,11 @@ const App = function () {
 
   // REGISTERING & CREATING ACTOR
   const verifyConnection = async () => {
-    // const connected = await window.ic.plug.isConnected();
-    // if (!connected) {
+    
     setActor(false);
     setIsConnected(false);
     await connecttion();
-    // } else {
-    //   console.log("connection already exists : verify connection ");
-    //   await createActor();
-    //   setIsConnected(true);
-    // }
+    
   };
   const onConnectionUpdate = () => {
     console.log(
@@ -63,13 +64,13 @@ const App = function () {
       if (publicKey) {
         setIsConnected(true);
         setPublicKey(publicKey);
-        const principalId = await window.ic.plug.agent.getPrincipal();
+        // const principalId = await window.ic.plug.agent.getPrincipal();
+        const principalId = window.ic.plug.sessionManager.sessionData.principalId;
+
         if (principalId) {
           console.log(`The connected user's principal id is:`, principalId);
           setPrincipalId(principalId);
         }
-        // Create an actor to interact with the NNS Canister
-        // we pass the NNS Canister id and the interface factory
       } else {
         setIsConnected(false);
       }
@@ -77,22 +78,68 @@ const App = function () {
       console.log(e);
     }
   };
-  const createActor = async () => {
+  const createActors = async () => {
+    await createActor1();
+    await createActor2();
+    await createActor3();
+    await createActorLB();
+    console.log("actors created");
+  }
+  const createActor1 = async () => {
     try {
+      console.log("Creating createActor1");
       const NNSUiActor = await window.ic.plug.createActor({
-        canisterId: nnsCanisterId,
-        interfaceFactory: idlFactory,
+        canisterId: process.env.COMPLAINT_REG_V2_BACKEND_1_CANISTER_ID,
+        interfaceFactory: idlFactory1,
       });
       setActor(NNSUiActor);
+      setActor1(NNSUiActor);
+      console.log("actor1")
+      console.log(NNSUiActor);
     } catch (ex) {
       console.log("Error while creating actor\n" + ex);
     }
   };
+  const createActor2 = async () => {
+    console.log("Creating createActor2");
+    var actor2 = await window.ic.plug.createActor({
+      canisterId: process.env.COMPLAINT_REG_V2_BACKEND_2_CANISTER_ID,
+      interfaceFactory: idlFactory2,
+    });
+    actors.push(actor2);
+    setActor(actor2)
+    setActor2(actor2);
+    console.log("actor2")
+    console.log(actor2);
+  }
+  const createActor3 = async () => {
+    console.log("Creating createActor3");
+
+    var actor3 = await window.ic.plug.createActor({
+      canisterId: process.env.COMPLAINT_REG_V2_BACKEND_3_CANISTER_ID,
+      interfaceFactory: idlFactory3,
+    });
+    actors.push(actor3);
+    setActor(actor3)
+    setActor3(actor3);
+    console.log("actor3")
+    console.log(actor3);
+  }
+  const createActorLB = async () => {
+    var actor4 = await window.ic.plug.createActor({
+      canisterId: process.env.COMPLAINT_REG_V2_LOAD_BALANCER_CANISTER_ID,
+      interfaceFactory: idlFactoryLB,
+    });
+    actors.push(actor4);
+    setActor(actor4);
+    console.log("actor4")
+    console.log(actor4);
+  }
 
   // /*************INTERACTION WITH BC ****************/
   const verifyUser = async () => {
     if (isConnected) {
-      const isNew = await actor.isNewActor();
+      const isNew = await complaint_reg_v2_load_balancer.isNewActor(principalId);
       console.log(isNew);
       if (isNew[0]) {
         setIsNewUser(isNew);
@@ -105,7 +152,7 @@ const App = function () {
             state: { actor: actor, principalId: principalId },
           });
         }
-        if (isNew[1] == "police") {
+        if (isNew[1] == "police" || isNew[1]=='admin') {
           setIsSetupComplete(true);
           setIsNewUser(isNew);
           navigate("/policedashboard", {
@@ -133,6 +180,13 @@ const App = function () {
             isNewUser[0] && (
               <Registeration
                 actor={actor}
+                createActor1={createActor1}
+                createActor2={createActor2}
+                createActor3={createActor3}
+                actor1={actor1}
+                actor2={actor2}
+                actor3={actor3}
+                actors={actors}
                 principalId={principalId}
                 setIsNewUser={setIsNewUser}
               />
@@ -165,8 +219,15 @@ const App = function () {
           element={
             <UserDashboard
               setIsConnected={setIsConnected}
-              createActor={createActor}
+              createActor1={createActor1}
+              createActor2={createActor2}
+              createActor3={createActor3}
+              actor1={actor1}
+              actor2={actor2}
+              actor3={actor3}
+              createActorLB={createActorLB}
               setIsNewUser={setIsNewUser}
+              actors={actors}
               actor={actor}
               setIsSetupComplete={setIsSetupComplete}
             />
@@ -177,8 +238,15 @@ const App = function () {
           element={
             <PoliceDashboard
               setIsConnected={setIsConnected}
-              createActor={createActor}
+              createActor1={createActor1}
+              createActor2={createActor2}
+              createActor3={createActor3}
+              actor1={actor1}
+              actor2={actor2}
+              actor3={actor3}
+              createActorLB={createActorLB}
               setIsNewUser={setIsNewUser}
+              actors={actors}
               actor={actor}
               setIsSetupComplete={setIsSetupComplete}
             />
@@ -188,15 +256,22 @@ const App = function () {
           path="/complaintview/:complaintId/*"
           element={
             <ComplaintView
-              createActor={createActor}
-              actor={actor}
               setIsConnected={setIsConnected}
-              setIsSetupComplete={setIsSetupComplete}
+              createActor1={createActor1}
+              createActor2={createActor2}
+              createActor3={createActor3}
+              actor1={actor1}
+              actor2={actor2}
+              actor3={actor3}
+              createActorLB={createActorLB}
               setIsNewUser={setIsNewUser}
+              actors={actors}
+              actor={actor}
+              setIsSetupComplete={setIsSetupComplete}
             />
           }
         >
-          <Route path=":cid" element={<FileFrame />} />
+          <Route path={`:cid`} element={<FileFrame createActor1={createActor1} createActor2={createActor2} createActor3={createActor3} actor1={actor1} actor2={actor2} actor3={actor3} actors={actors}/>} />
         </Route>
       </Routes>
     </div>

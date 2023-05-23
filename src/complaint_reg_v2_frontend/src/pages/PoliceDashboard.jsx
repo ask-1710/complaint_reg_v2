@@ -1,21 +1,32 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { complaint_reg_v2_backend } from "../../../declarations/complaint_reg_v2_backend";
-import { idlFactory } from "../../../declarations/complaint_reg_v2_backend";
+import { complaint_reg_v2_backend_1 } from "../../../declarations/complaint_reg_v2_backend_1";
+import { complaint_reg_v2_backend_2 } from "../../../declarations/complaint_reg_v2_backend_2";
+import { complaint_reg_v2_backend_3 } from "../../../declarations/complaint_reg_v2_backend_3";
+import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
+import { idlFactory } from "../../../declarations/complaint_reg_v2_backend_1";
+import Spinner from "react-bootstrap/Spinner";
+
 import { useEffect } from "react";
 import { Badge } from "react-bootstrap";
 import { create } from "ipfs-http-client";
+import * as FileSaver from "file-saver";
 var eccrypto = require("eccrypto");
 const CryptoJS = require("crypto-js")
 
 const PoliceDashboard = ({
-  actor,
+  actor1,
+  actor2,
+  actor3,
+  actors,
   setIsConnected,
-  createActor,
+  createActor1,
+  createActor2,
+  createActor3,
+  createActorLB,
   setIsNewUser,
   setIsSetupComplete,
 }) => {
-  const nnsCanisterId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
   const [complaints, setComplaints] = useState([]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [updatedStatus, setUpdatedStatus] = useState("");
@@ -27,6 +38,8 @@ const PoliceDashboard = ({
   const [isInvestigator, setIsInvestigator] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
   const [isChargesheet, setIsChargesheet] = useState(true);
+  const [isComplaintSet, setIsComplaintSet] = useState(false);
+  const [userCanister, setUserCanister] = useState();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,8 +51,9 @@ const PoliceDashboard = ({
     unsolved: { step: 5, badgeText: "Unsolved" },
   };
 
-  const principalId = location?.state?.principalId;
-  const isConnected = location?.state?.isConnected;
+  // const principalId = location?.state?.principalId;
+  // const isConnected = location?.state?.isConnected;
+
 
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const charactersLength = characters.length;
@@ -51,31 +65,59 @@ const PoliceDashboard = ({
     setIsSetupComplete(true);
     setIsNewUser(false, "police");
     setIsConnected(true);
-
-    if (actor == "") createActor();
   }, []);
 
-  useEffect(() => {
-    if (actor != "") getUnassignedComplaints();
-  }, [actor]);
-
   useEffect(()=>{
-    checkIfInvestigator();
-  },[selectedComplaint]);
+    if(!isComplaintSet) getUnassignedComplaints();
+  }, [actor1])
 
   async function getUnassignedComplaints() {
-    var complaints = await complaint_reg_v2_backend.getUnassignedComplaints();
-    console.log(complaints);
+    var complaintsFrom1 = await complaint_reg_v2_backend_1.getUnassignedComplaints();
+    var complaintsFrom2 = await complaint_reg_v2_backend_2.getUnassignedComplaints();
+    var complaintsFrom3 = await complaint_reg_v2_backend_3.getUnassignedComplaints();
+    var complaints = [];
+    if(complaintsFrom1 != []) {
+      complaints.push(...complaintsFrom1);
+    }
+    if(complaintsFrom2 != []) {
+      complaints.push(...complaintsFrom2)
+    }
+    if(complaintsFrom3 != []) {
+      complaints.push(...complaintsFrom3)
+    }
+    if(actor1=="") return;
+    const principalId = window.ic.plug.sessionManager.sessionData.principalId;    
+    const userCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principalId);
+    setUserCanister(userCanister);    
+
+    for(const complaint of complaints) {
+      complaint[1].isInvestigator = (principalId == complaint[1].investigatorPrincipal);
+    }
     // const complaints=[[0, {title: "abc", summary: "sum", date: "12/3/22", location: "delhi"}],
     // [1, {title: "abc", summary: "sum", date: "12/3/22", location: "delhi"}]];
     setComplaints(complaints);
+    setIsComplaintSet(true);
   }
 
   async function updateComplaint(complaintId) {
+    const complaintActor = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(complaintId);
     setSelectedComplaint(null);
-    console.log("Updating complaint id "+complaintId+" with status "+updatedStatus);
-    var result = await actor.updateComplaintStatus(complaintId, updatedStatus);
+    
+    var result;
+    if(complaintActor == 0){ 
+      
+      result = await actor1.updateComplaintStatus(complaintId, updatedStatus);
+    }
+    else if(complaintActor == 1) {
+      
+      result = await actor2.updateComplaintStatus(complaintId, updatedStatus);
+    }
+    else if(complaintActor == 2) {
+      
+      result = await actor3.updateComplaintStatus(complaintId, updatedStatus);
+    }
     if(result==true) {
+      console.log("Updated complaint id "+complaintId+" with status "+updatedStatus);
       getUnassignedComplaints();
     }
   }
@@ -148,12 +190,42 @@ const PoliceDashboard = ({
 
   async function encryptAESKeyAndSave(aesKey,complaintId, fileCID, document) {
     const principalId = window.ic.plug.sessionManager.sessionData.principalId;
-    const pubKey = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principalId); // encryption with public key
-    const polPubKey = Buffer.from(pubKey, "base64");
+    let pubKey = "" ;
+    let polPubKey = "";
+    let actor ;
+    console.log(userCanister);
+    if(userCanister == 0) {
+      actor = actor1;
+    }
+    else if(userCanister == 1) {
+      actor = actor2;
+    }
+    else if(userCanister == 2){ 
+      actor = actor3;
+    }    
+    pubKey = await actor.getPublicKeyByPrincipal(principalId); // encryption with public key
+    polPubKey = Buffer.from(pubKey, "base64");
+    console.log(pubKey);
     const aesSymmetricKey = Buffer.from(aesKey, "base64");
+
+    const complaintCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(complaintId);
+    if(complaintCanister == 0) {
+      
+      actor = actor1
+    }
+    else if(complaintCanister == 1) {
+      
+      actor = actor2;
+    }
+    else if(complaintCanister == 2) {
+
+      actor = actor3;
+    }
+    
     eccrypto.encrypt(polPubKey, aesSymmetricKey).then(async function(encrypted) {
       const encStringified = JSON.stringify(encrypted);
       // store encrypted aes key
+      let someRes = await complaint_reg_v2_load_balancer.addFileOwnerAndGetCanisterId(fileCID, principalId, complaintId)
       let result;
       if(document=="FIR") result = await actor.addFIR(complaintId, fileCID, encStringified, "");
       else if(document == "chargesheet") result = await actor.addChargesheet(complaintId, fileCID, encStringified, "");
@@ -169,34 +241,135 @@ const PoliceDashboard = ({
     
   }
 
-  async function checkIfInvestigator() {
-    console.log("Selected complaint "+selectedComplaint);
-    if(selectedComplaint!="" && selectedComplaint!=null) {
-      const isInvestigator = await actor.isInvestigatorForComplaint(selectedComplaint);
-      setIsInvestigator(isInvestigator);
-    }
-  }
+  // async function checkIfInvestigator(complaint) {
+  //   // const complaintCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(compaincomplaintId);
+  //   // if(complaintCanister == 0) await createActor1();
+  //   // else if(complaintCanister == 1) await createActor2();
+  //   // else if(complaintCanister == 2) await createActor3(); 
+  //   const principalId = window.ic.plug.sessionManager.sessionData.principalId;
+  //   // if(principalId == complaint)
+  //   // const isInvestigator = await actor.isInvestigatorForComplaint(complaintId);
+  //   // setIsInvestigator(isInvestigator);
+  //   // console.log("Is investigator?" + isInvestigator);
+  //   return isInvestigator;
+  // }
 
   async function showSave(updated) {
     setShowSaveButton(updated!=originalStatus);
   }
 
+  async function writeToFile(fileName, data) {
+
+    const file = new Blob([data], {type: 'application/json'});
+
+    FileSaver.saveAs(file, fileName);
+    
+  }
+
+  function stringifyJSON1(obj) {
+    console.log(obj);
+    if(typeof obj == "bigint") {
+      return obj.toString();
+    }
+    // Base case: handle primitive types
+    if (typeof obj !== 'object' || obj === null) {
+      return JSON.stringify(obj);
+    }
+    // arrays
+    // const newObj = Array.isArray(obj) ? [] : {};
+
+    const newObj = Array.isArray(obj) ? obj : {};
+    
+    // Recursive case: handle objects
+    const keys = Object.keys(obj);  
+    keys.forEach((key) => {
+      newObj[key] = stringifyJSON(obj[key]);
+    });
+    console.log("If json ? ");
+    console.log(newObj);
+ 
+    return JSON.stringify(newObj);
+  }
+
+  function stringifyJSON(obj) {
+    if(typeof obj == "bigint") {
+      return obj.toString();
+    }
+    // Base case: handle primitive types
+    if (typeof obj !== 'object' || obj === null) {
+      return obj;
+    }
+  
+    // Recursive case: handle objects and arrays
+    const keys = Object.keys(obj);
+  
+    const newObj = Array.isArray(obj) ? [] : {};
+  
+    keys.forEach((key) => {
+      newObj[key] = stringifyJSON(obj[key]);
+    });
+  
+    return JSON.stringify(newObj);
+  }
+  
+
+  
+  async function backupAllData() {
+    const principalId = window.ic.plug.sessionManager.sessionData.principalId;    
+    const userDet = await complaint_reg_v2_load_balancer.getUser(principalId);
+    if(userDet[1] == "admin") {
+      const allData1 = await actor1.queryAllData();
+      const allData2 = await actor2.queryAllData();
+      const allData3 = await actor3.queryAllData();
+      const date1 = new Date().toString() + "-replica-1";
+      const date2 = new Date().toString() + "-replica-2";
+      const date3 = new Date().toString() + "-replica-3";
+      let stringified1 = stringifyJSON(allData1);
+      let stringified2 = stringifyJSON(allData2);
+      let stringified3 = stringifyJSON(allData3);
+
+      writeToFile(date1, stringified1);
+      writeToFile(date2, stringified2);
+      writeToFile(date3, stringified3);
+    } else {
+      alert("Only admins can create backups!");
+    }
+  }
+
   return (
     <div className="container">
-      <button className="button-27 my-4" onClick={getUnassignedComplaints}>
-        Get New Complaints
-      </button>
-      {complaints.length == 0 ? (
+      <div className="flex d-flex">
+        <div className="row">
+          <div className="col-8">
+          <button className="button-27 my-4" onClick={getUnassignedComplaints}>
+            Get New Complaints
+          </button>
+          </div>
+          <div className="col-4">
+          <button className="button-27 my-4" onClick={backupAllData}>
+            Backup Data
+          </button>
+          </div>
+        </div>
+      </div>
+
+      {!isComplaintSet && 
+          <div className="center">
+            <Spinner animation="border">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
+          </div>}
+      {isComplaintSet && complaints.length == 0 ? (
         <div className="typewriter center">
           <p> No complaints yet ... </p>
         </div>
       ) : (
-        <div className="container">
+        isComplaintSet && (<div className="container">
           <div className="list-group">
             {complaints.map((complaint) => {
               return (
                 <div key={complaint[0]}>
-                  {selectedComplaint == complaint[0] && isInvestigator ? (
+                  {selectedComplaint == complaint[0] && complaint[1].isInvestigator ? (
                     <div className="list-group-item my-2 list-group-item-action align-items-start" key={complaint[0]}>
                       <div className="flex d-flex flex-column p-2 m-4">
                         <div>
@@ -295,7 +468,7 @@ const PoliceDashboard = ({
                             }
                           </div>
                         </div>
-                      </div>{" "}
+                      
 
                       <div>
                         {
@@ -358,6 +531,7 @@ const PoliceDashboard = ({
                           )
                         }
                       </div>
+                      </div>
                     </div>                    
                   ) : (
                     <div className="list-group-item my-2 list-group-item-action align-items-start" key={complaint[0]} data-toggle="list">
@@ -368,7 +542,10 @@ const PoliceDashboard = ({
                           setUpdatedStatus(Object.keys(complaint[1].status)[0]);
                           setOriginalStatus(Object.keys(complaint[1].status)[0])
                         }}
-                      >
+                      > 
+                        {
+                          complaint[1].isInvestigator && <Badge className="float-right" bg="warning" text="dark">CASE HANDLED BY YOU</Badge>
+                        }
                         <ul className="complaint-list">
                           <li>
                             <b>Subject</b>
@@ -435,7 +612,7 @@ const PoliceDashboard = ({
               );
             })}
           </div>
-        </div>
+        </div>)
       )}
     </div>
   );

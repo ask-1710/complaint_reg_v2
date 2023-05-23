@@ -12,9 +12,13 @@ import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Time "mo:base/Time";
+import VebTree "vebtree";
 
 
-actor {
+let vebTree = VebTree.VebTree.construct();
+
+
+actor Actor3 {
   
   type StatusText = {
     #firregisteration; // requires /*complaint basic*/ info
@@ -37,6 +41,10 @@ actor {
     closureReport : Text; // CID
     complainantPrincipal: Principal;
     updatedOn: Time.Time;
+    investigatorPrincipal: Principal;
+    FIRDate : Time.Time;
+    chargesheetDate: Time.Time;
+    closureReportDate : Time.Time;
   };
 
   public type Role = {
@@ -50,12 +58,17 @@ actor {
   type User = {
     name : Text;
     address : Text;
+    mobileNum: Text;
+    emailID: Text;
     complaints : [Nat];
   };
   // TODO: add stats, complaints solved, complaints pending, assigned, active, unsolved&inactive
   type Police = {
     name : Text;
     designation : Text;
+    stationCode: Text;
+    stationAddress: Text;
+    mobileNum: Text;
     activeComplaints : [Nat];
     numSolvedCases : Nat;
     numUnsolvedCases : Nat;
@@ -80,16 +93,19 @@ actor {
     evidence : [Text]; // CIDs
     status : StatusText;
     FIR : Text; // CID - step1
+    complainantPrincipal: Text;
     chargesheet : Text; // CID
     closureReport : Text; // CID
-    currentInchargeName: Text;
-    currentInchargeDesig: Text;
     assignedStation: Text;
     assignedStationCode: Text;
-    ownershipHistory: [Police]; 
+    investigatorPrincipal: Text;
+    ownershipHistory: [Principal]; 
     complainantName: Text;
     updatedOn: Time.Time;
     complainantAddress: Text;  
+    FIRDate : Time.Time;
+    chargesheetDate: Time.Time;
+    closureReportDate : Time.Time;
   };
 
   type FileRequestor = {
@@ -97,11 +113,24 @@ actor {
     name: Text; 
   };
 
+  public type AllData = {
+    userList : [(Principal, User)];
+    assignedRoles : [(Principal, Role)];
+    policeList : [(Principal, Police)];
+    roleRequests : [(Principal, (Role, Text))];
+    complaintList : [(Nat, Complaint)];
+    complaintOwnership : [(Nat, [Principal])];
+    keysList: [(Principal, Text)];
+    uploaderAESKeys: [(Text, EncKey)];
+    userAESKeys: [(Principal, [UserCIDKey])];
+    userFileAccessRequests : [(Text, [Principal])];
+  };
+
   var numComplaints : Nat = 0;
   let assignedRoles : HashMap.HashMap<Principal, Role> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let userList : HashMap.HashMap<Principal, User> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let policeList : HashMap.HashMap<Principal, Police> = HashMap.HashMap(32, Principal.equal, Principal.hash);
-  let roleRequests : HashMap.HashMap<Principal, Role> = HashMap.HashMap(32, Principal.equal, Principal.hash);
+  let roleRequests : HashMap.HashMap<Principal, (Role, Text)> = HashMap.HashMap(32, Principal.equal, Principal.hash);
   let complaintList : HashMap.HashMap<Nat, Complaint> = HashMap.HashMap(32, Nat.equal, Hash.hash);
   let complaintOwnership : HashMap.HashMap<Nat, [Principal]> = HashMap.HashMap(32, Nat.equal, Hash.hash);
   let keysList: HashMap.HashMap<Principal, Text> = HashMap.HashMap(32, Principal.equal, Principal.hash);
@@ -125,6 +154,15 @@ actor {
       case ("owner") {
         actualRole := #investigator;
       };
+      case ("admin") {
+        actualRole := #administrator;
+      };
+      case ("administrator") {
+        actualRole := #administrator;
+      };
+      case ("complainant") {
+        actualRole := #complainant;
+      };
       case (_) {
         actualRole := #general;
       };
@@ -147,15 +185,15 @@ actor {
       };
     };
   };
-  private func requestRole(principal : Principal, role : Text) : () {
+  private func requestRole(principal : Principal, role : Text, aadhaarNum: Text) : () {
     let actualRole = textToRole(role);
-    roleRequests.put(principal, actualRole);
+    roleRequests.put(principal, (actualRole, aadhaarNum));
     switch (roleRequests.get(principal)) {
       case (null) {
         Debug.print("No role requests");
       };
       case (?req) {
-        Debug.print("Role requests " # roleToText(req));
+        Debug.print("Role requests " # roleToText(req.0));
       };
     };
   };
@@ -183,6 +221,9 @@ actor {
               var newPolice : Police = {
                 name = oldP.name;
                 designation = oldP.designation;
+                stationCode = oldP.stationCode;
+                stationAddress = oldP.stationAddress;
+                mobileNum = oldP.mobileNum;
                 numSolvedCases = oldP.numSolvedCases;
                 numUnsolvedCases = oldP.numUnsolvedCases;
                 activeComplaints = oldPoliceComplaints;
@@ -204,6 +245,9 @@ actor {
             designation = newP.designation;
             numSolvedCases = newP.numSolvedCases;
             numUnsolvedCases = newP.numUnsolvedCases;
+            stationCode = newP.stationCode;
+            stationAddress = newP.stationAddress;
+            mobileNum = newP.mobileNum;
             activeComplaints = newPoliceComplaints;
           };
           policeList.put(newPrincipal, newPolice);
@@ -217,28 +261,56 @@ actor {
   private func transferEvidenceOwnership(principal : Principal, complaintId : Nat) : async Bool {
     // principal of new investigator
     try {
+      var complaint = complaintList.get(complaintId);
+      switch(complaint) {
+        case null { return false; };
+        case (?oldComplaint) {
+          var newComplaint = {
+            title = oldComplaint.title;
+            summary = oldComplaint.summary;
+            FIR = oldComplaint.FIR;
+            chargesheet = oldComplaint.chargesheet;
+            closureReport = oldComplaint.closureReport;
+            date = oldComplaint.date;
+            evidence = oldComplaint.evidence;
+            location = oldComplaint.location;
+            status = oldComplaint.status;
+            typee = "cognizable";
+            complainantPrincipal = oldComplaint.complainantPrincipal;
+            updatedOn = Time.now();
+            investigatorPrincipal = principal;
+            FIRDate = oldComplaint.FIRDate;
+            chargesheetDate = oldComplaint.chargesheetDate;
+            closureReportDate = oldComplaint.closureReportDate;
+          };
+          complaintList.put(complaintId, newComplaint);
+        };
+      };
       var pastOwners = complaintOwnership.get(complaintId);
       switch (pastOwners) {
         case (null) {
           complaintOwnership.put(complaintId, [principal]);
-          return await transferActiveCases(null, principal, complaintId);
+          Debug.print("assigned case ownership");
+          return true;
+          // return await transferActiveCases(null, principal, complaintId);
         };
         case (?arr) {
           var numOwners = arr.size();
           var latestOwner = arr[numOwners -1];
-          var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
-          if(result!=false) return false;
+          // var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
+          // if(result!=false) return false;
           let newArray = Array.append<Principal>(arr, [principal]);
           complaintOwnership.put(complaintId, newArray);
+          Debug.print("transferred case ownership");
           return true;
         };
       };
     } catch(err) {
+      Debug.print("error while transfering ownership");
       return false;
     };
-    return true;
   };
-  
+
 
   private func textToStatusVariant(status: Text): StatusText {
     switch(status) {
@@ -294,28 +366,28 @@ actor {
   private func canAddComplaint(principal : Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
-      case (?#complainant) return true;
+      case (?#complainant or ?#administrator) return true;
       case (_) return false;
     };
   };
   private func canCreateEvidence(principal : Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
-      case (?#investigator) return true;
+      case (?#investigator or ?#administrator) return true;
       case (_) return false;
     };
   };
   private func canModifyEvidence(principal : Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
-      case (?#investigator) return true;
+      case (?#investigator or ?#administrator) return true;
       case (_) return false;
     };
   };
   private func canViewEvidence(principal : Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
-      case (?#complainant or ?#investigator) return true;
+      case (?#complainant or ?#investigator or ?#administrator) return true;
       case (_) return false;
     };
   };
@@ -327,6 +399,13 @@ actor {
     };
   };
   private func canAssignRole(principal: Principal) : Bool {
+    let role = getRole(principal);
+    switch (role) {
+      case (?#administrator) return true;
+      case (_) return false;
+    };
+  };
+  private func canQueryAllData(principal: Principal) : Bool {
     let role = getRole(principal);
     switch (role) {
       case (?#administrator) return true;
@@ -386,6 +465,8 @@ actor {
       name = "no-data";
       address = "";
       complaints = [0];
+      mobileNum = "";
+      emailID = "";
     };
   };
 
@@ -396,6 +477,9 @@ actor {
       activeComplaints = [0];
       numSolvedCases = 0;
       numUnsolvedCases = 0;
+      stationCode = "";
+      stationAddress = "";
+      mobileNum = "";
     };
   };
   private func getPoliceFromPrincipals(principals: [Principal]) : [Police] {
@@ -436,14 +520,17 @@ actor {
       FIR = ""; // CID - step1
       chargesheet = ""; // CID
       closureReport = ""; // CID
-      currentInchargeName = "";
-      currentInchargeDesig = "";
       assignedStation = "";
       assignedStationCode = "";
-      ownershipHistory = [getDummyPolice()];
+      ownershipHistory = []; // TO
       complainantName = "";
+      complainantPrincipal = "";
+      investigatorPrincipal = "";
       complainantAddress = "";
       updatedOn = Time.now();
+      FIRDate = Time.now();
+      chargesheetDate= Time.now();
+      closureReportDate = Time.now();
     };
   };
   private func convertPrincipalsToText(principals: [Principal]): [Text] {
@@ -483,6 +570,8 @@ actor {
       name = "";
       address= "";
       complaints=[];
+      mobileNum = "";
+      emailID = "";
     };
     switch (userList.get(caller)) {
       case (null) {
@@ -522,6 +611,10 @@ actor {
       closureReport = "NONE";
       complainantPrincipal = caller;
       updatedOn=Time.now();
+      investigatorPrincipal=caller;
+      FIRDate = Time.now();
+      chargesheetDate= Time.now();
+      closureReportDate = Time.now();
     };
     let dummyComplaintId: Nat = 0;
     switch (userObj) {
@@ -542,8 +635,8 @@ actor {
       };
     };
   };
-  public query func getRoleRequests() : async [(Principal, Role)] {
-    return Iter.toArray<(Principal, Role)>(roleRequests.entries());
+  public query func getRoleRequests() : async [(Principal, (Role, Text))] {
+    return Iter.toArray<(Principal, (Role, Text))>(roleRequests.entries());
   };
   public query func getUsers() : async [User] {
     return Iter.toArray<User>(userList.vals());
@@ -568,13 +661,19 @@ actor {
   };
   public query func getDetailedComplaintInfoByComplaintId(complaintId: Nat) : async ComplaintViewModel {
     var complaintInfo: ?Complaint = complaintList.get(complaintId);
+    bool isCaseStillActive = vebTree.isPartOf(complaintId);
+    if (!isCaseStillActive) return;
     switch(complaintInfo) {
       case null {
         return getDummyComplaintView();
       };
       case (?info) {
-        var ownershipHistory: [Police] = getComplaintOwnershipHistoryPriv(complaintId);
-        var currentIncharge: Police = ownershipHistory[ownershipHistory.size()-1];
+        var ownershipHistory: [Principal] = [];
+        var ownershipHistory1 = complaintOwnership.get(complaintId);
+        switch(ownershipHistory1) {
+          case null { };
+          case (?oh) { ownershipHistory := oh; };
+        };
         var complainant: ?User = userList.get(info.complainantPrincipal);
         var complainantName = "";
         var complainantAddress = "";
@@ -591,8 +690,7 @@ actor {
           closureReport = info.closureReport;
           assignedStation = "";
           assignedStationCode = "";
-          currentInchargeDesig = currentIncharge.designation;
-          currentInchargeName = currentIncharge.name;
+          investigatorPrincipal = Principal.toText(info.investigatorPrincipal);
           date = info.date;
           evidence = info.evidence;
           location = info.location;
@@ -603,7 +701,62 @@ actor {
           title = info.title;
           complainantName = complainantName;
           complainantAddress = complainantAddress;
+          complainantPrincipal = Principal.toText(info.complainantPrincipal);
           updatedOn = info.updatedOn;
+          FIRDate = info.FIRDate;
+          chargesheetDate= info.chargesheetDate;
+          closureReportDate = info.closureReportDate;
+        };    
+        return complaintView;    
+      };
+    };
+  };
+
+public query func getDetailedComplaintInfoVebByComplaintId(complaintId: Nat) : async ComplaintViewModel {
+    var complaintInfo: ?Complaint = complaintList.get(complaintId);
+    switch(complaintInfo) {
+      case null {
+        return getDummyComplaintView();
+      };
+      case (?info) {
+        var ownershipHistory: [Principal] = [];
+        var ownershipHistory1 = complaintOwnership.get(complaintId);
+        switch(ownershipHistory1) {
+          case null { };
+          case (?oh) { ownershipHistory := oh; };
+        };
+        var complainant: ?User = userList.get(info.complainantPrincipal);
+        var complainantName = "";
+        var complainantAddress = "";
+        switch(complainant) {
+          case null {};
+          case (?user) {
+            complainantName := user.name;  
+            complainantAddress := user.address;
+          };
+        };
+        var complaintView: ComplaintViewModel  = {
+          FIR = info.FIR;
+          chargesheet = info.chargesheet;
+          closureReport = info.closureReport;
+          assignedStation = "";
+          assignedStationCode = "";
+          investigatorPrincipal = Principal.toText(info.investigatorPrincipal);
+          date = info.date;
+          evidence = info.evidence;
+          location = info.location;
+          status = info.status;
+          ownershipHistory = ownershipHistory;
+          summary = info.summary;
+          typee = info.typee;
+          title = info.title;
+          complainantName = complainantName;
+          complainantAddress = complainantAddress;
+          complainantPrincipal = Principal.toText(info.complainantPrincipal);
+          updatedOn = info.updatedOn;
+          FIRDate = info.FIRDate;
+          chargesheetDate= info.chargesheetDate;
+          closureReportDate = info.closureReportDate;
         };    
         return complaintView;    
       };
@@ -637,8 +790,8 @@ actor {
   };
   public query ({ caller }) func getFileAccessRequests(cid: Text) : async [(Text, FileRequestor)] {
     var dummyUsers: [(Text, FileRequestor)] = [("", {category="";name=""})];
-    let isOwner = isFileOwner(caller, cid);
-    if(isOwner) {
+    // let isOwner = isFileOwner(caller, cid);
+    // if(isOwner) {
       var requestsForCID: ?[Principal] = userFileAccessRequests.get(cid);
       switch(requestsForCID) {
         case(null) {
@@ -672,9 +825,9 @@ actor {
           return Iter.toArray<(Text, FileRequestor)>(userPrincipalList.entries()); // length == 0, no data but user is owner , len >= 1, owner and data exist
         };
       };
-    } else {
-      return dummyUsers; // length == 1, not owner;
-    }
+    // } else {
+    //   return dummyUsers; // length == 1, not owner;
+    // }
   };
   public query func getFileAccessRequestsToTest(cid: Text) : async [Text] {
     let principals = userFileAccessRequests.get(cid);
@@ -690,13 +843,14 @@ actor {
     switch(police) {
       case null { return false ;};
       case (?pol) {
-        var assignedComplaints = pol.activeComplaints;
-        for(idx in Iter.range(0, assignedComplaints.size()-1)) {
-          var currComplaint = assignedComplaints[idx];
-          if(currComplaint == complaintId) {
-            return true;
-          }
-        };
+        var ownershipHistory: ?[Principal] = complaintOwnership.get(complaintId);
+        switch(ownershipHistory) {
+          case (null) {return false;};
+          case (?history) {
+            var currentIncharge: Principal = history[history.size()-1];
+            if(currentIncharge == caller) return true;
+          };
+        };        
         return false;
       };
     };
@@ -714,15 +868,31 @@ actor {
       };
     } 
   };
+
+  public query ({caller}) func queryAllData() : async AllData {
+    assert(canQueryAllData(caller));
+    return {
+      userList = Iter.toArray<(Principal, User)>(userList.entries());
+      assignedRoles = Iter.toArray<(Principal, Role)>(assignedRoles.entries());
+      policeList = Iter.toArray<(Principal, Police)>(policeList.entries());
+      roleRequests = Iter.toArray<(Principal, (Role, Text))>(roleRequests.entries());
+      complaintList = Iter.toArray<(Nat, Complaint)>(complaintList.entries());
+      complaintOwnership = Iter.toArray<(Nat, [Principal])>(complaintOwnership.entries());
+      keysList = Iter.toArray<(Principal, Text)>(keysList.entries());
+      uploaderAESKeys = Iter.toArray<(Text, EncKey)>(uploaderAESKeys.entries());
+      userAESKeys = Iter.toArray<(Principal, [UserCIDKey])>(userAESKeys.entries());
+      userFileAccessRequests = Iter.toArray<(Text, [Principal])>(userFileAccessRequests.entries());
+    };
+  };
   /************** QUERY FUNCTIONS END ***********/
 
   /************** UPDATE FUNCTIONS END ***********/
-  public shared ({ caller }) func addUser(name : Text, role : Text, address : Text, publicKey: Text) : async Text {
+  public shared ({ caller }) func addUser(name : Text, role : Text, address : Text, mobileNum: Text, emailID: Text, aadhaarNum: Text, publicKey: Text) : async Text {
     // requestRole(caller, role);
     keysList.put(caller, publicKey);
     let actualRole = textToRole(role);
-    roleRequests.put(caller, actualRole);    
-    userList.put(caller, { name = name; complaints = []; address = address });
+    roleRequests.put(caller, (actualRole, aadhaarNum));    
+    userList.put(caller, { name = name; complaints = []; address = address ; mobileNum = mobileNum ; emailID = emailID});
     switch (userList.get(caller)) {
       case (null) {
         return "Error while creating user";
@@ -732,17 +902,18 @@ actor {
       };
     };
   };
-  public shared ({ caller }) func addPolice(name : Text, designation : Text, role : Text, publicKey: Text) : async Text {
+  public shared ({ caller }) func addPolice(name : Text, designation : Text, role : Text,stationAddress: Text, stationCode: Text, mobileNum :Text, publicKey: Text) : async Text {
     // requestRole(caller, role);
     keysList.put(caller, publicKey);
     let actualRole = textToRole(role);
-    roleRequests.put(caller, actualRole);
-    policeList.put(caller, { name = name; designation = designation; activeComplaints = []; numSolvedCases = 0; numUnsolvedCases = 0 });
+    roleRequests.put(caller, (actualRole, ""));
+    policeList.put(caller, { name = name; designation = designation; activeComplaints = []; numSolvedCases = 0; numUnsolvedCases = 0 ; stationAddress = stationAddress; stationCode = stationCode; mobileNum = mobileNum; });
     return "Hii " # name # ", Police with principal " # Principal.toText(caller) # " has been created!";
   };
-  public shared ({ caller }) func addComplaint(title : Text, summary : Text, location : Text, date : Text) : async Bool {
+  public shared ({ caller }) func addComplaint(compId: Nat, title : Text, summary : Text, location : Text, date : Text) : async Bool {
     let mlResult = "Cognizable";
     var finalResult : Bool = false;
+    vebTree.add(compId);
     var user = userList.get(caller);
     switch (user) {
       case (null) { finalResult := false };
@@ -751,7 +922,7 @@ actor {
         var currTime = Time.now();
         numComplaints := numComplaints +1;
         complaintList.put(
-          numComplaints,
+          compId,
           {
             title = title;
             summary = summary;
@@ -765,13 +936,19 @@ actor {
             closureReport = "NONE";
             complainantPrincipal = caller;
             updatedOn = Time.now();
+            investigatorPrincipal=caller;
+            FIRDate = Time.now();
+            chargesheetDate= Time.now();
+            closureReportDate = Time.now();
           },
         );
-        oldComplaints := Array.append(oldComplaints, [numComplaints]);
+        oldComplaints := Array.append(oldComplaints, [compId]);
         var newUser : User = {
           name = obj.name;
           address = obj.address;
           complaints = oldComplaints;
+          mobileNum = obj.mobileNum;
+          emailID = obj.emailID;
         };
         userList.put(caller, newUser);
         finalResult := true;
@@ -786,9 +963,32 @@ actor {
   };
   public shared ({ caller }) func transferOwnershipTo(complaintId : Nat, newPolice: Text) : async Bool {
     if(canTransferEvidence(caller)) {
-      return await transferEvidenceOwnership(Principal.fromText(newPolice), complaintId); // WARNING : calling another function to update
+    return await transferEvidenceOwnership(Principal.fromText(newPolice), complaintId);
     };
-    return false;
+    // return false;
+    // try {
+    //   var pastOwners = complaintOwnership.get(complaintId);
+    //   switch (pastOwners) {
+    //     case (null) {
+    //       complaintOwnership.put(complaintId, [Principal.fromText(newPolice)]);
+    //       Debug.print("assigned case ownership");
+    //       return true;
+    //       // return await transferActiveCases(null, principal, complaintId);
+    //     };
+    //     case (?arr) {
+    //       // var result: Bool = await transferActiveCases(?latestOwner, principal, complaintId);
+    //       // if(result!=false) return false;
+    //       let newArray = Array.append<Principal>(arr, [Principal.fromText(newPolice)]);
+    //       complaintOwnership.put(complaintId, newArray);
+    //       Debug.print("transferred case ownership");
+    //       return true;
+    //     };
+    //   };
+    // } catch(err) {
+    //   Debug.print("error while transfering ownership");
+    //   return false;
+    // };
+
   };
   public shared ({ caller }) func updateComplaintStatus(complaintId: Nat, status: Text) : async Bool {
     var variantStatus = status;
@@ -812,6 +1012,10 @@ actor {
             typee = "cognizable";
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            investigatorPrincipal=oldComplaint.investigatorPrincipal;
+            FIRDate = oldComplaint.FIRDate;
+            chargesheetDate= oldComplaint.chargesheetDate;
+            closureReportDate = oldComplaint.closureReportDate;
           };
           complaintList.put(complaintId, newComplaint);
           return true;
@@ -844,6 +1048,10 @@ actor {
             closureReport = oldComplaint.closureReport; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            investigatorPrincipal = oldComplaint.investigatorPrincipal;
+            FIRDate = oldComplaint.FIRDate;
+            chargesheetDate= oldComplaint.chargesheetDate;
+            closureReportDate = oldComplaint.closureReportDate;
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -897,8 +1105,8 @@ actor {
   public shared ({ caller }) func provideAccessToFile(principalText: Text, cid: Text, newKey: Text) : async Bool {
     let principal = Principal.fromText(principalText);
     
-    let isOwner:Bool = isFileOwner(caller, cid);
-    if(isOwner) {
+    // let isOwner:Bool = isFileOwner(caller, cid);
+    // if(isOwner) {
         var oldRequests = userFileAccessRequests.get(cid);
         switch (oldRequests) {
           case (?oldR) {
@@ -920,9 +1128,9 @@ actor {
           };
           case (null) {return false;};
         };
-    } else {
-      return false;
-    }
+    // } else {
+    //   return false;
+    // }
   };
   public shared ({ caller }) func addFIR(complaintId: Nat, fileCID: Text, encAESKey: Text, AESiv: Text): async Bool {
     var complaintObj = complaintList.get(complaintId);
@@ -941,8 +1149,12 @@ actor {
             FIR = fileCID ;// CID - step1
             chargesheet = oldComplaint.chargesheet; // CID
             closureReport = oldComplaint.closureReport; // CID
+            FIRDate = Time.now();
+            chargesheetDate = oldComplaint.chargesheetDate;
+            closureReportDate = oldComplaint.closureReportDate;
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -998,6 +1210,10 @@ actor {
             closureReport = oldComplaint.closureReport; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            FIRDate = oldComplaint.FIRDate;
+            chargesheetDate = Time.now();
+            closureReportDate = oldComplaint.closureReportDate;
+            investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -1053,6 +1269,10 @@ actor {
             closureReport = fileCID; // CID
             complainantPrincipal = oldComplaint.complainantPrincipal;
             updatedOn = Time.now();
+            FIRDate = oldComplaint.FIRDate;
+            chargesheetDate = oldComplaint.chargesheetDate;
+            closureReportDate = Time.now();
+            investigatorPrincipal = oldComplaint.investigatorPrincipal;
           };
           complaintList.put(complaintId, newComplaint);
           // OPTIMIZE : STORE ONLY UPLOADER PRINCIPAL AND GET CID FROM userKeys DS
@@ -1089,6 +1309,7 @@ actor {
     };
     return false;
   };
+  
 
 
 

@@ -2,20 +2,21 @@ import React, { useEffect } from "react";
 import Switch from "react-switch";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
 // import * as eccryptoJS from 'eccrypto-js';
 var eccrypto = require("eccrypto");
 const CryptoJS = require("crypto-js")
 
 
-const Registeration = ({ actor, principalId , setIsNewUser }) => {
-  const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "", emailID: "" });
+const Registeration = ({ actor1, actor2, actor3, actors, principalId , setIsNewUser , createActor1, createActor2, createActor3}) => {
+  const [userInfo, setUserInfo] = useState({ name: "", address: "" , role: "user", mobileNum: "", emailID: "" , aadhaarNum: ""});
   const [policeInfo, setPoliceInfo] = useState({
     name: "",
     designation: "",
     role: "investigator",
     stationCode: "",
     stationAddress: "",
-    mobileNum: ""
+    mobileNum: "",
   });
   const [isUser, setIsUser] = useState(false);
   const [visibleButton, setVisibleButton] = useState(false);
@@ -30,7 +31,14 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
     const encPrivKey = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(privKey.toString("base64")), secret).toString(); // base64, encrypted key
     localStorage.setItem(principalText, encPrivKey);
     const pubKey = eccrypto.getPublic(privKey);
-    const createdUserResp = await actor.addUser(userInfo.name, userInfo.role, userInfo.address, pubKey.toString("base64")); // public key
+    const mappedCanisterId = await complaint_reg_v2_load_balancer.mapUserToCanister(principalText, "user");
+
+    let createdUserResp = "";
+    console.log(actor2);
+    if(mappedCanisterId == 0) createdUserResp = await actor1.addUser(userInfo.name, userInfo.role, userInfo.address, userInfo.mobileNum, userInfo.emailID, userInfo.aadhaarNum ,pubKey.toString("base64")); // public <keygen />
+    else if(mappedCanisterId == 1) createdUserResp = await actor2.addUser(userInfo.name, userInfo.role, userInfo.address, userInfo.mobileNum, userInfo.emailID, userInfo.aadhaarNum, pubKey.toString("base64")); // public <keygen />
+    else if(mappedCanisterId == 2) createdUserResp = await actor3.addUser(userInfo.name, userInfo.role, userInfo.address, userInfo.mobileNum, userInfo.emailID, userInfo.aadhaarNum, pubKey.toString("base64")); // public <keygen />
+
     console.log(createdUserResp);
     setIsNewUser(false)
     navigate("/userdashboard", { state: { principalId , isConnected: true } });
@@ -42,12 +50,41 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
     const encPrivKey = CryptoJS.AES.encrypt(CryptoJS.enc.Base64.parse(privKey.toString("base64")), secret).toString(); // base64, encrypted key
     localStorage.setItem(principalText, encPrivKey);
     const pubKey = eccrypto.getPublic(privKey);
-    const createdPoliceResp = await actor.addPolice(
-      policeInfo.name,
-      policeInfo.designation,
-      policeInfo.role,
-      pubKey.toString("base64")
-    );
+    let createdPoliceResp = "";
+    const mappedCanisterId = await complaint_reg_v2_load_balancer.mapUserToCanister(principalText, "police");
+    if(mappedCanisterId == 0) {
+      createdPoliceResp = await actor1.addPolice(
+        policeInfo.name,
+        policeInfo.designation,
+        policeInfo.role,
+        policeInfo.stationAddress,
+        policeInfo.stationCode,
+        policeInfo.mobileNum,
+        pubKey.toString("base64")
+      );
+    }
+    else if(mappedCanisterId == 1) {
+      createdPoliceResp = await actor2.addPolice(
+        policeInfo.name,
+        policeInfo.designation,
+        policeInfo.role,
+        policeInfo.stationAddress,
+        policeInfo.stationCode,
+        policeInfo.mobileNum,
+        pubKey.toString("base64")
+      );
+    }
+    else if(mappedCanisterId == 2) {      createdPoliceResp = await actor3.addPolice(
+        policeInfo.name,
+        policeInfo.designation,
+        policeInfo.role,
+        policeInfo.stationAddress,
+        policeInfo.stationCode,
+        policeInfo.mobileNum,
+        pubKey.toString("base64")
+      );
+    }
+
     console.log(createdPoliceResp);
     setIsNewUser(false);
     navigate("/policedashboard", { state: { principalId , isConnected: true } });
@@ -126,6 +163,19 @@ const Registeration = ({ actor, principalId , setIsNewUser }) => {
                   value={userInfo.emailID}
                   onChange={(ev) => {
                     setUserInfo({ ...userInfo, ["emailID"]: ev.target.value });
+                  }}
+                ></input>
+              </div>
+              <div className="row mt-2 justify-content-center">
+                <input
+                  className="form-control col-6"
+                  placeholder="Enter your aadhaar number (for verfification)"
+                  type="text"
+                  id="aadhaarNum"
+                  name="aadhaarNum"
+                  value={userInfo.aadhaarNum}
+                  onChange={(ev) => {
+                    setUserInfo({ ...userInfo, ["aadhaarNum"]: ev.target.value });
                   }}
                 ></input>
               </div>

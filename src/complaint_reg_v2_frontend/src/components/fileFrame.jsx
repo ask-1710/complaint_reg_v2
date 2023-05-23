@@ -1,7 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { create } from "ipfs-http-client";
-import { complaint_reg_v2_backend } from '../../../declarations/complaint_reg_v2_backend';
+import { complaint_reg_v2_backend_1 } from '../../../declarations/complaint_reg_v2_backend_1';
+import { complaint_reg_v2_backend_2 } from '../../../declarations/complaint_reg_v2_backend_2';
+import { complaint_reg_v2_backend_3 } from '../../../declarations/complaint_reg_v2_backend_3';
+import { complaint_reg_v2_load_balancer } from '../../../declarations/complaint_reg_v2_load_balancer';
 
 var eccrypto = require("eccrypto");
 
@@ -11,7 +14,7 @@ var eccrypto = require("eccrypto");
 // import * as eccryptoJS from 'eccrypto-js';
 const CryptoJS = require("crypto-js")
 
-const FileFrame = ({actor, createActor}) => {
+const FileFrame = ({actors, actor, createActor1, createActor2, createActor3, actor1, actor2, actor3}) => {
     const params = useParams();
     const cid = params?.cid;
     const [isDecrypted, setIsDecrypted] = useState(false);
@@ -23,6 +26,8 @@ const FileFrame = ({actor, createActor}) => {
     const [aesKey, setAESKey] = useState("");
     const [providingAccessStatus, setProvidingAccessStatus]=useState(null);
     const [totalQueryTime, setTotalQueryTime] = useState(0);
+    const [mappedCanister, setMappedCanister] = useState(0);
+    const [userMappedCanister, setUserMappedCanister] = useState(0);
 
 
     const location = useLocation();
@@ -40,38 +45,75 @@ const FileFrame = ({actor, createActor}) => {
     });
     
     useEffect(()=>{
-        if(actor=="") createActor();
-        else startActivity();
-    },[]);
+        startActivity();
+    },[actor3]);
 
     const startActivity = async () => {
-        if(userType == "police") {
+        let getRequests = []
+        var mappedCanister = 0
+        var fileDetails = await complaint_reg_v2_load_balancer.getFileOwner(cid);
+        console.log(fileDetails);
+        mappedCanister = fileDetails[1];
+
+        if(userType == "police" || userType == "admin") {
             console.log("is police");
-            const getRequests = await actor.getFileAccessRequests(cid);
-            if(getRequests.length == 1 && getRequests[0][0]=="") {
+            var actualfileOwner = fileDetails[0];
+            const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
+            if(actualfileOwner == principal) {
+                const getRequests1 = await complaint_reg_v2_backend_1.getFileAccessRequests(cid);
+                const getRequests2 = await complaint_reg_v2_backend_2.getFileAccessRequests(cid);
+                const getRequests3 = await complaint_reg_v2_backend_3.getFileAccessRequests(cid);
+                if(getRequests1.length>0) getRequests.push(...getRequests1);
+                if(getRequests2.length>0) getRequests.push(...getRequests2);
+                if(getRequests3.length>0) getRequests.push(...getRequests3);
+            }
+            else {
                 console.log("not file owner");
                 setIsFileOwner(false);
-                await getAESKeyToViewFile();
+                await getAESKeyToViewFile(mappedCanister);
                 return;
             }
             setIsFileOwner(true);
             console.log(getRequests);
             setFileRequests(getRequests);
         }
-        await getAESKeyToViewFile();
+        await getAESKeyToViewFile(mappedCanister);
         
     };
 
-    const getAESKeyToViewFile = async () => {
+    const getAESKeyToViewFile = async (mappedCanister) => {
         var startTime = Date.now();
 
+        const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
         console.time("decrypt-aes-key");
         console.log("retrieve keys");
-        const keys = await actor.getEncAESKeyForDecryption(cid);
+        let keys;
+        if(mappedCanister == 0) {
+            keys = await actor1.getEncAESKeyForDecryption(cid);
+        }
+        else if(mappedCanister == 1) {
+            keys = await actor2.getEncAESKeyForDecryption(cid);
+        }
+        else if(mappedCanister == 2){
+            keys = await actor3.getEncAESKeyForDecryption(cid);
+        }
+
+        
         console.log(keys);
         if(keys.cid == "" || keys.aesKey == "") {
             setHasAccess(false);
-            const hasRequested = await actor.hasRequestedAccessForCID(cid);
+            let hasRequested ;
+            let userMappedCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principal);
+            if(userMappedCanister == 0) {
+                hasRequested = await actor1.hasRequestedAccessForCID(cid);
+            }
+            else if(userMappedCanister == 1) {
+                hasRequested = await actor2.hasRequestedAccessForCID(cid);
+            }
+            else if(userMappedCanister == 2) {
+                hasRequested = await actor3.hasRequestedAccessForCID(cid);
+            }
+            setUserMappedCanister(userMappedCanister);
             setHasRequestedAccess(hasRequested);
             console.log("no access to file");
         } else {
@@ -127,12 +169,33 @@ const FileFrame = ({actor, createActor}) => {
         
     async function requestAccessByCID() {
         console.log('Sending request for file with CID '+cid);
-        const hasRequested = await actor.sendRequestAccessForCID(cid); // TO BE IMPLEMENTED
-        setHasRequestedAccess(hasRequested);
+        let hasRequested;
+        if(userMappedCanister == 0) {
+            hasRequested = await actor1.sendRequestAccessForCID(cid);
+        }
+        else if(userMappedCanister == 1) {
+            hasRequested = await actor2.sendRequestAccessForCID(cid); 
+        }
+        else if(userMappedCanister == 2) {
+            hasRequested = await actor3.sendRequestAccessForCID(cid); 
+        }
+        setHasRequestedAccess(hasRequested); 
     }
 
     async function provideFileAccess(principal) {
-        var pubKeyOfRequestor = await complaint_reg_v2_backend.getPublicKeyByPrincipal(principal);
+        console.log(principal);
+        var reqCanister = await complaint_reg_v2_load_balancer.getCanisterByUserPrincipal(principal);
+        var pubKeyOfRequestor;
+        if(reqCanister == 0) {
+            pubKeyOfRequestor = await complaint_reg_v2_backend_1.getPublicKeyByPrincipal(principal);
+        }
+        else if(reqCanister == 1) { 
+            pubKeyOfRequestor = await complaint_reg_v2_backend_2.getPublicKeyByPrincipal(principal); 
+        }
+        else if(reqCanister == 2) {
+            pubKeyOfRequestor = await complaint_reg_v2_backend_3.getPublicKeyByPrincipal(principal); 
+        }
+
         console.log("pub key of user " + pubKeyOfRequestor.toString());
 
         // encrypt AES Key with pubKeyOfUser
@@ -140,16 +203,31 @@ const FileFrame = ({actor, createActor}) => {
         const aesSymmetricKey = Buffer.from(aesKey, "base64");
         console.log(aesKey + " key given for access to user");
         eccrypto.encrypt(bufPubKey, aesSymmetricKey).then(async function(encrypted) {
-          const encStringified = JSON.stringify(encrypted);
-          // store encrypted aes key
-          const result = await actor.provideAccessToFile(principal, cid, encStringified);
-          console.log(result);
-          setProvidingAccessStatus(result);
-          if(result == true) {
+            const encStringified = JSON.stringify(encrypted);
+            // store encrypted aes key
+            let result ;
+            if(reqCanister == 0) {
+                result = await actor1.provideAccessToFile(principal, cid, encStringified);
+            }
+            else if(reqCanister == 1) { 
+                result = await actor2.provideAccessToFile(principal, cid, encStringified);            
+            }
+            else if(reqCanister == 2) {
+                result = await actor3.provideAccessToFile(principal, cid, encStringified);            
+            }
+            console.log(result);
+            setProvidingAccessStatus(result);
+            if(result == true) {
             // refetch requests
-            const getRequests = await actor.getFileAccessRequests(cid);
-            setFileRequests(getRequests);
-          }
+                let getRequests = []
+                const getRequests1 = await complaint_reg_v2_backend_1.getFileAccessRequests(cid);
+                const getRequests2 = await complaint_reg_v2_backend_2.getFileAccessRequests(cid);
+                const getRequests3 = await complaint_reg_v2_backend_3.getFileAccessRequests(cid);
+                if(getRequests1.length>0) getRequests.push(...getRequests1);
+                if(getRequests2.length>0) getRequests.push(...getRequests2);
+                if(getRequests3.length>0) getRequests.push(...getRequests3);
+                setFileRequests(getRequests);
+            }
         });
         
     }

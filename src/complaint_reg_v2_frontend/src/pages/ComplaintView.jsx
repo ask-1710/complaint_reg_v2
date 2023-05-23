@@ -3,10 +3,16 @@ import { Route, Routes, useLocation, useParams } from "react-router-dom";
 import Spinner from "react-bootstrap/Spinner";
 import FileFrame from "../components/fileFrame";
 import { Link } from "react-router-dom";
+import { complaint_reg_v2_load_balancer } from "../../../declarations/complaint_reg_v2_load_balancer";
 
 const ComplaintView = ({
-  createActor,
-  actor,
+  createActor1,
+  createActor2,
+  createActor3,
+  actor1,
+  actor2,
+  actor3,
+  actors,
   setIsSetupComplete,
   setIsConnected,
   setIsNewUser,
@@ -15,6 +21,8 @@ const ComplaintView = ({
   const [isLoading, setIsLoading] = useState(true);
   const [complaintInfo, setComplaintInfo] = useState(null);
   const [registeredDaysBefore, setRegisteredDaysBefore] = useState(null);
+  const [hasLoadedInfo, setHasLoadedInfo] = useState(false);
+  const [principal, setPrincipal] = useState("")
   const { complaintId } = useParams();
   const location = useLocation();
   const userType = location?.state?.userType;
@@ -32,48 +40,41 @@ const ComplaintView = ({
     setIsSetupComplete(true);
     setIsNewUser(false, userType);
     setIsConnected(true);
-    if (actor == "") createActor();
   }, []);
 
-  useEffect(() => {
-    if (actor != "") getDetailedComplaintInfo();
-  }, [actor]);
+  useEffect(()=>{
+    if(!hasLoadedInfo) getDetailedComplaintInfo(); 
+  }, [actor3])
 
   const getDetailedComplaintInfo = async () => {
     console.log("Inside getDetailedComplaintInfo");
-    var complaintInfo = await actor.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
+
+    const mappedCanister = await complaint_reg_v2_load_balancer.getCanisterByComplaintID(parseInt(complaintId));
+    var complaintInfo;
+    if(mappedCanister == 0) {
+      complaintInfo = await actor1.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
+    }
+    else if(mappedCanister == 1){ 
+      console.log(actor2);
+      complaintInfo = await actor2.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
+    }
+    else if(mappedCanister == 2) {
+      complaintInfo = await actor3.getDetailedComplaintInfoByComplaintId(parseInt(complaintId));
+    }
+
     setComplaintInfo(complaintInfo);
+    const principal = window.ic.plug.sessionManager.sessionData.principalId.toString();
+    setPrincipal(principal);
+    
     var toDate = new Date(complaintInfo.date);
     var today = new Date();
     var differenceInDays = Math.ceil((today.getTime() - toDate.getTime())/ (1000 * 60 * 60 * 24));
     console.log(differenceInDays);
     setRegisteredDaysBefore(differenceInDays.toString());
     setIsLoading(false);
+    setHasLoadedInfo(true);
     console.log(complaintInfo);
   };
-
-  function getFIRDate() {
-    var lastDate;
-    if(complaintInfo.chargesheet != "NONE") {
-      lastDate = new Date().setDate(new Date(Number(complaintInfo.updatedOn)/1000000).getDate() - 1);
-      
-      console.log(new Date(lastDate));      
-    } else {
-      lastDate = new Date().setDate(new Date(Number(complaintInfo.updatedOn)/1000000).getDate() - 2);
-      console.log(new Date(lastDate));      
-    }
-    return new Date(lastDate).toString();
-  }
-
-  function getChargesheetFiledDate() {
-    var lastDate;
-    
-      lastDate = new Date().setDate(new Date(Number(complaintInfo.updatedOn)/1000000).getDate());
-      
-      console.log(new Date(lastDate));      
-    
-    return new Date(lastDate).toString();
-  }
 
   return (
     <div className="container">
@@ -102,10 +103,9 @@ const ComplaintView = ({
               <p><strong>Elaborated description</strong><br/>{complaintInfo.summary}</p>
               <p><strong>Last updated on: </strong>{new Date(Number(complaintInfo.updatedOn)/1000000).toString()}</p>
               {
-                complaintInfo.currentInchargeName != "no-police" ? (
+                complaintInfo.investigatorPrincipal!=complaintInfo.complainantPrincipal ? (
                   <>
-                    <p><strong>Incharge Details</strong></p>
-                    <p><strong>Investigator: </strong>{complaintInfo.currentInchargeName +" , " +complaintInfo.currentInchargeDesig}</p>
+                    <p><strong>Complaint assigned and investigation started</strong></p>
                     <p><strong>Police Station:</strong> E5 - Police Station in R.A. Puram, Chennai-600028 </p><br/>
                     <p className="my-2"><strong>Status : </strong>{ possibleStages[Object.keys(complaintInfo.status)[0]].badgeText }</p><br />
                     <p><strong>All related case documents </strong></p>
@@ -124,18 +124,18 @@ const ComplaintView = ({
                       <br />
                       {
                         complaintInfo.FIR!='NONE' && ( 
-                          <Link to={`${complaintInfo.FIR}`} state={{userType: userType}}>FIR filed on {getFIRDate()}</Link>
+                          <Link to={`${complaintInfo.FIR}`} state={{userType: userType}}>FIR filed on {new Date(Number(complaintInfo.FIRDate)/1000000).toString()}</Link>
                           )
                       }<br/>
                       {
                         complaintInfo.chargesheet!="NONE" && (
-                          <Link to={`${complaintInfo.chargesheet}`} state={{userType: userType}}>Chargesheet {' '} filed on {getChargesheetFiledDate()}</Link>
+                          <Link to={`${complaintInfo.chargesheet}`} state={{userType: userType}}>Chargesheet {' '} filed on {new Date(Number(complaintInfo.chargesheetDate)/1000000).toString()}</Link>
                         )              
                       }
                       <br />
                       {
                         complaintInfo.closureReport != "NONE" && (
-                          <Link to={`${complaintInfo.closureReport}`} state={{userType: userType}}>Closure Report</Link>
+                          <Link to={`${complaintInfo.closureReport}`} state={{userType: userType}}>Closure Report {' '} filed on {new Date(Number(complaintInfo.closureReportDate)/1000000).toString()}</Link>
                         )
                       }
                   
@@ -153,7 +153,7 @@ const ComplaintView = ({
       )}
 
       <Routes>
-        <Route path={`:cid`} element={<FileFrame createActor={createActor} actor={actor}/>} />
+        <Route path={`:cid`} element={<FileFrame createActor1={createActor1} createActor2={createActor2} createActor3={createActor3} actor1={actor1} actor2={actor2} actor3={actor3} actors={actors}/>} />
       </Routes>
     </div>
   );
