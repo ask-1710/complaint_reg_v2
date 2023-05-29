@@ -1,6 +1,4 @@
-# complaint_reg_v2
-
-Welcome to Criminal Investigation and Complaint Tracking using Blockchain
+# Criminal Investigation and Complaint Tracking using Blockchain
 
 This project is developed by Aarthi Suresh Kumar and Anirudh TN, final year students of SSN College of Engineering and submitted as their final year project. 
 
@@ -48,32 +46,25 @@ It will start a server at `http://localhost:8080`, proxying API requests to the 
 
 # INSTALLATION GUIDE
 
-Use only node v18.10.0 and npm v8.19.2
+Install versions node v18.10.0 and npm v8.19.2 
 
-Install dfx 0.12.1
+Install dfx 0.12.1 by runnning the following command
 
-Run 
-
-**DFX_VERSION=0.12.1 sh -ci "$(curl -sSL https://internetcomputer.org/install.sh)"**
-
-Follow the instructions above to get started with the project
-
-**npm i --location=global ipfs**  -> to install cli to spawn local ipfs node 
-
-Run these two commnads:
-
+````
+DFX_VERSION=0.12.1 sh -ci "$(curl -sSL https://internetcomputer.org/install.sh)"
+````
+Install IPFS CLI
+```
+npm i --location=global ipfs  // to install cli to spawn local ipfs node 
+```
+Run the following two commands
+```
 jsipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["http://127.0.0.1:5002", "http://localhost:3000", "http://127.0.0.1:5001", "https://webui.ipfs.io"]'
 jsipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "POST"]'
-
-
-Command to run to spawn a node
-
-**jsipfs daemon** -> command to run
-
-
+```
 To install ipfs-http-client to connect this application to the local IPFS node
-
-**npm i ipfs-http-client** -> in the root directory of the project
-
+````
+**npm i ipfs-http-client** // in the root directory of the project
+````
 
 
